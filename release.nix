@@ -10,12 +10,11 @@ let pkgs = import <nixpkgs> {}; in rec {
     '';
   };
 
-  version = builtins.readFile versionFile;
-
-  sourceTarball = pkgs.stdenv.mkDerivation {
+  sourceTarball = pkgs.stdenv.mkDerivation rec {
     # TODO: Hydra complains that the string is not allowed to refer to a store path
     # possible workaround: builtins.unsafeDiscardStringContext
-    name = "rethinkdb-${version}.tgz";
+    name = builtins.unsafeDiscardStringContext "rethinkdb-${version}.tgz";
+    version = builtins.readFile versionFile;
     # name = "rethinkdb-nix.tgz";
     builder = builtins.toFile "builder.sh" ''
       source $stdenv/setup
