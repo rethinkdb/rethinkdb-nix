@@ -66,7 +66,7 @@ let pkgs = import <nixpkgs> {}; in rec {
       boost
       curl
     ];
-    builder = builtins.toFile "builder.sh" ''
+    builder = builtins.toFile "builder.sh" '' 
       source $stdenv/setup
       tar xf $src
       cd rethinkdb-*
