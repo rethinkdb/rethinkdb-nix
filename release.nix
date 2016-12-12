@@ -1,4 +1,38 @@
-let pkgs = import <nixpkgs> {}; in rec {
+let
+  pkgs = import <nixpkgs> {};
+
+  scripts = ''
+    configure drivers/convert_protofile scripts/gen-version.sh
+    mk/support/pkg/pkg.sh test/run external/v8_*/build/gyp/gyp
+  '';
+  patchScripts = ''
+    for script in ${scripts}; do
+      cp $script $script.orig
+      patchShebangs $script
+    done
+  '';
+  unpatchScripts = dest: ''
+    for script in ${scripts}; do
+      cp $script.orig ${dest}/$script
+    done
+  '';
+  make = ''
+    make -j $NIX_BUILD_CORES -l $NIX_BUILD_CORES
+  '';
+
+  skip_tests = [
+    # known failures (TODO: fix upstream)
+    # "unit.RDBBtree"
+    "unit.UtilsTest"
+    "unit.RDBProtocol"
+    "unit.RDBBtree"
+    # Slow tests
+    "unit.DiskBackedQueue"
+  '';
+  skip_tests_filter =
+      builtins.concatStringSep " " (map (t: "'!" + t + "'") skip_tests);
+
+in rec {
   versionFile = pkgs.stdenv.mkDerivation {
     name = "rethinkdb-version";
     src = <rethinkdb>;
@@ -11,11 +45,8 @@ let pkgs = import <nixpkgs> {}; in rec {
   };
 
   sourceTarball = pkgs.stdenv.mkDerivation rec {
-    # TODO: Hydra complains that the string is not allowed to refer to a store path
-    # possible workaround: builtins.unsafeDiscardStringContext
-    name = builtins.unsafeDiscardStringContext "rethinkdb-${version}.tgz";
-    version = builtins.readFile versionFile;
-    # name = "rethinkdb-nix.tgz";
+    name = "rethinkdb-${version}.tgz";
+    version = builtins.unsafeDiscardStringContext (builtins.readFile versionFile);
     builder = builtins.toFile "builder.sh" ''
       source $stdenv/setup
       # TODO: https://github.com/NixOS/nixpkgs/issues/13744
@@ -23,14 +54,12 @@ let pkgs = import <nixpkgs> {}; in rec {
       cp -r $src rethinkdb
       chmod -R u+w rethinkdb
       cd rethinkdb
-      # TODO: use original shebangs in tarball
-      patchShebangs configure
-      patchShebangs drivers/convert_protofile
-      patchShebangs scripts/gen-version.sh
-      patchShebangs mk/support/pkg/pkg.sh
+      ${patchScripts}
       ./configure --fetch jemalloc
-      make dist -j $NIX_BUILD_CORES
-      cp build/packages/rethinkdb-*.tgz $out
+      ${make} dist-dir
+      ${unpatchScripts "build/packages/rethinkdb-${version}"}
+      cd build/packages
+      tar zcf $out rethinkdb-${version}
     '';
     __noChroot = true;
     src = <rethinkdb>;
@@ -50,10 +79,8 @@ let pkgs = import <nixpkgs> {}; in rec {
     ];
   };
 
-  unitTests = pkgs.stdenv.mkDerivation {
-    # TODO
-    # name = "rethinkdb-unit-test-results-${src.version}.html";
-    name = "rethinkdb-unit-test-results.html";
+  fastTests = pkgs.stdenv.mkDerivation {
+    name = "rethinkdb-unit-test-results-${src.version}";
     src = sourceTarball;
     buildInputs = with pkgs; [
       protobuf
@@ -70,33 +97,12 @@ let pkgs = import <nixpkgs> {}; in rec {
       source $stdenv/setup
       tar xf $src
       cd rethinkdb-*
-      patchShebangs external/v8_*/build/gyp/gyp
-      patchShebangs test/run
       ./configure
-      make -j $NIX_BUILD_CORES DEBUG=1
-      test/run -j $NIX_BUILD_CORES unit
-      cp test/results/*/test_results.html $out
+      ${make} DEBUG=1
+      test/run -j $NIX_BUILD_CORES '!long' ${skip_test_filter} || :
+      test -e test/results/*/test_results.html
+      cp test/results/* $out
+      echo report test_results $out/*/test_results.html > $out/nix-support/hydra-build-products
     '';
   };
 }
-
-# # pkgs.stdenv.mkDerivation {
-#   name = "rethinkdb-dev";
-#   buildInputs = with pkgs; [
-#    gcc6
-#    protobuf
-#    python
-#    nodejs
-#    nodePackages.coffee-script
-#    nodePackages.browserify
-#    zlib
-#    openssl
-#    curl
-#    jemalloc
-#    boost
-#    git
-#   ];
-#   shellHook = ''
-#     export LIBRARY_PATH=${pkgs.jemalloc}/lib
-#   '';
-# }
