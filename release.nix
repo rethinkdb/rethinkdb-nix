@@ -10,12 +10,12 @@ let pkgs = import <nixpkgs> {}; in rec {
     '';
   };
 
-  sourceTarball = pkgs.stdenv.mkDerivation rec {
+  sourceTarball = pkgs.stdenv.mkDerivation {
     # TODO: Hydra complains that the string is not allowed to refer to a store path
     # possible workaround: builtins.unsafeDiscardStringContext
     # name = "rethinkdb-${version}.tgz";
+    # version = builtins.readFile versionFile;
     name = "rethinkdb-nix.tgz";
-    version = builtins.readFile versionFile;
     builder = builtins.toFile "builder.sh" ''
       source $stdenv/setup
       # TODO: https://github.com/NixOS/nixpkgs/issues/13744
@@ -30,7 +30,7 @@ let pkgs = import <nixpkgs> {}; in rec {
       patchShebangs mk/support/pkg/pkg.sh
       ./configure --fetch jemalloc
       make dist -j $NIX_BUILD_CORES
-      cp build/packages/rethinkdb-${version}.tgz $out
+      cp build/packages/rethinkdb-*.tgz $out
     '';
     __noChroot = true;
     src = <rethinkdb>;
@@ -50,7 +50,7 @@ let pkgs = import <nixpkgs> {}; in rec {
     ];
   };
 
-  unitTests = pkgs.stdenv.mkDerivation rec {
+  unitTests = pkgs.stdenv.mkDerivation {
     # TODO
     # name = "rethinkdb-unit-test-results-${src.version}.html";
     name = "rethinkdb-unit-test-results.html";
