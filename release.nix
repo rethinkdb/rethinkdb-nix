@@ -66,14 +66,14 @@ let pkgs = import <nixpkgs> {}; in rec {
       boost
       curl
     ];
-    builder = builtins.toFile "builder.sh" '' 
+    builder = builtins.toFile "builder.sh" ''
       source $stdenv/setup
       tar xf $src
       cd rethinkdb-*
       patchShebangs external/v8_*/build/gyp/gyp
       patchShebangs test/run
       ./configure
-      make -j $NIX_BUILD_CORES DEBUG=1
+      make -j $NIX_BUILD_CORES DEBUG=1 ALLOW_WARNINGS=1 # TODO
       test/run -j $NIX_BUILD_CORES unit
       cp test/results/*/test_results.html $out
     '';
