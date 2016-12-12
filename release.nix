@@ -52,7 +52,7 @@ let pkgs = import <nixpkgs> {}; in rec {
     src = sourceTarball;
     buildInputs = with pkgs; [
       protobuf
-      python
+      python27Full
       nodejs
       nodePackages.coffee-script
       nodePackages.browserify
@@ -65,8 +65,10 @@ let pkgs = import <nixpkgs> {}; in rec {
       source $stdenv/setup
       tar xf $src
       cd rethinkdb-*
+      patchShebangs external/v8_*/build/gyp/gyp
+      patchShebangs test/run
       ./configure
-      make -j $NIX_BUILD_CORES DEBUG=1 build/debug/rethinkdb-unittest
+      make -j $NIX_BUILD_CORES DEBUG=1
       test/run -j $NIX_BUILD_CORES unit
       cp test/results/*/test_results.html $out
     '';
