@@ -109,11 +109,19 @@ let
     name = "rethinkdb-${version}";
     version = unsafeDiscardStringContext (readFile versionFile);
     builder = mkBuilder ''
+
       # TODO: https://github.com/NixOS/nixpkgs/issues/13744
       export SSL_CERT_FILE=$cacert/etc/ssl/certs/ca-bundle.crt
-      cp -r $src rethinkdb
+
+      mkdir rethinkdb
+      cp -r $src/* rethinkdb/
       chmod -R u+w rethinkdb
       cd rethinkdb
+
+      # TODO: move upstream
+      sed -i 's/reset-dist-dir: FORCE | web-assets/reset-dist-dir: FORCE/' mk/packaging.mk
+      sed -i 's/install: build/install:/' packaging/debian/rules
+
       echo "${version}" > VERSION.OVERRIDE
       cp -r --no-preserve=all $fetchDependencies/* .
       ${patchScripts}
@@ -155,7 +163,9 @@ let
       curl
     ];
     builder = mkBuilder ''
-      cp -r --no-preserve=all $src/* .
+      cp -r $src/* .
+      chmod -R u+w .
+      ${patchScripts}
       ./configure
       ${make} DEBUG=1
       test/run -j $NIX_BUILD_CORES '!long' ${skip_tests_filter} || :
@@ -165,15 +175,15 @@ let
     '';
   };
 
-  vmBuild = { diskImage, name, builder, attrs ? {}, ncpu ? 6, memSize ? 4096 }:
+  vmBuild = { diskImage, name, build, attrs ? {}, ncpu ? 6, memSize ? 4096 }:
     pkgs.vmTools.runInLinuxImage ((derivation (rec {
-      inherit name;
+      inherit name memSize;
       builder = "${pkgs.bash}/bin/bash";
       system = builtins.currentSystem;
-      args = [ (toFile "builder.sh" ''
+      args = [ (toFile "builder.sh" (''
         set -ex
         PATH=/usr/bin:/bin:/usr/sbin:/sbin
-      '' + builder) ];
+        '' + build)) ];
       QEMU_OPTS = "-smp ${toString ncpu}";
     } // attrs)) // {
       inherit diskImage;
@@ -191,7 +201,7 @@ let
       dsc = vmBuild {
         name = "rethinkdb-${sourcePrep.version}-${name}-src";
         attrs = { src = sourcePrep; };
-        builder = ''
+        build = ''
           cp -r $src rethinkdb
           cd rethinkdb
           ./configure
@@ -204,7 +214,7 @@ let
       deb = arch: diskImage: vmBuild {
         name = replace "-src$" "-${arch}" dsc.name;
         attrs = { src = dsc; };
-	builder = ''
+	build = ''
           PATH=/usr/bin:/bin:/usr/sbin:/sbin
           mkdir /build
           dpkg-source -x $src/*.dsc /build/source
