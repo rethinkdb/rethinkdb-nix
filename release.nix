@@ -1,13 +1,14 @@
-with (with builtins; {
-  inherit toFile readFile concatStringsSep unsafeDiscardStringContext
+with rec {
+  inherit (builtins)
+    toFile readFile concatStringsSep unsafeDiscardStringContext
     listToAttrs match head tail toJSON toPath elemAt getAttr length
-    trace genList isString;
-  foldl = foldl'; #'
+    trace genList isString fromJSON getEnv concatLists toString;
+  foldl = builtins.foldl'; #'
   tracing = x: trace x x;
-});
+  for = xs: f: map f xs;
+  pkgs = import <nixpkgs> {};
+};
 let
-  pkgs = import <nixpkgs> {}; 
-
   mkBuilder = script: toFile "builder.sh" ("source $stdenv/setup\n" + script);
 
   scripts = concatStringsSep " " [
@@ -24,7 +25,8 @@ let
     for script in ${scripts}; do
       test ! -e $script.orig || cp $script.orig ${dest}/$script
     done
-  '';
+    '';
+
   make = "make -j $NIX_BUILD_CORES -l $NIX_BUILD_CORES";
 
   skip_tests = [
@@ -73,7 +75,7 @@ let
     name = "rethinkdb-dependencies-src";
     builder = mkBuilder ("mkdir $out\n" +
       concatStringsSep "\n"
-        (map (dep: "cp -rv --no-preserve=all ${"$"}${dep}/* $out/") fetch_list));
+        (map (dep: "cp -r --no-preserve=all ${"$"}${dep}/* $out/") fetch_list));
     buildInputs = [ <rethinkdb> ];
   } // listToAttrs (map (dep: let info = depInfo dep; in {
     name = dep;
@@ -92,14 +94,16 @@ let
 
   fetchList = ["v8" "jemalloc"];
 
-in rec {
-
-  #test = pkgs.stdenv.mkDerivation {
-  #  name = "test";
-  #  builder = toFile "builder.sh" ". $stdenv/setup; cat <<__end\n${toJSON (depInfo "v8")}\n__end";
-  #};
-
   fetchDependencies = mkFetch fetchList;
+
+  debBuildDeps = [
+    "build-essential" "protobuf-compiler" "python"
+    "libprotobuf-dev" "libcurl4-openssl-dev"
+    "libboost-dev" "libncurses5-dev"
+    "libjemalloc-dev" "wget" "m4"
+    "libssl-dev"
+    "devscripts" "debhelper" "fakeroot"
+  ];
 
   sourcePrep = pkgs.stdenv.mkDerivation rec {
     name = "rethinkdb-${version}";
@@ -111,7 +115,7 @@ in rec {
       chmod -R u+w rethinkdb
       cd rethinkdb
       echo "${version}" > VERSION.OVERRIDE
-      cp -rv --no-preserve=all $fetchDependencies/* .
+      cp -r --no-preserve=all $fetchDependencies/* .
       ${patchScripts}
       ./configure --fetch jemalloc
       ${make} dist-dir DIST_DIR=$out
@@ -151,7 +155,7 @@ in rec {
       curl
     ];
     builder = mkBuilder ''
-      cp -rv --no-preserve=all $src/* .
+      cp -r --no-preserve=all $src/* .
       ./configure
       ${make} DEBUG=1
       test/run -j $NIX_BUILD_CORES '!long' ${skip_tests_filter} || :
@@ -160,4 +164,63 @@ in rec {
       echo report test_results $out/*/test_results.html > $out/nix-support/hydra-build-products
     '';
   };
-}
+
+  vmBuild = { diskImage, name, builder, attrs ? {}, ncpu ? 6, memSize ? 4096 }:
+    pkgs.vmTools.runInLinuxImage ((derivation (rec {
+      inherit name;
+      builder = "${pkgs.bash}/bin/bash";
+      system = builtins.currentSystem;
+      args = [ (toFile "builder.sh" ''
+        set -ex
+        PATH=/usr/bin:/bin:/usr/sbin:/sbin
+      '' + builder) ];
+      QEMU_OPTS = "-smp ${toString ncpu}";
+    } // attrs)) // {
+      inherit diskImage;
+    });
+
+  debs = with pkgs.vmTools.diskImageFuns;
+    listToAttrs (concatLists (for [
+      { name = "xenial";
+        b64 = ubuntu1604x86_64;
+	b32 = ubuntu1604i386; }
+      { name = "wily";
+	b64 = ubuntu1510x86_64;
+	b32 = ubuntu1510i386; }
+    ] ({ name, b64, b32, extra ? [] }: let
+      dsc = vmBuild {
+        name = "rethinkdb-${sourcePrep.version}-${name}-src";
+        attrs = { src = sourcePrep; };
+        builder = ''
+          cp -r $src rethinkdb
+          cd rethinkdb
+          ./configure
+          make build-deb-src UBUNTU_RELEASE=${name} SIGN_PACKAGE=0
+          cp build/packages/*.{dsc,build,changes,tar.?z} $out
+        '';
+        memSize = 4096;
+        diskImage = b64 { extraPackages = debBuildDeps ++ extra; };
+      };
+      deb = arch: diskImage: vmBuild {
+        name = replace "-src$" "-${arch}" dsc.name;
+        attrs = { src = dsc; };
+	builder = ''
+          PATH=/usr/bin:/bin:/usr/sbin:/sbin
+          mkdir /build
+          dpkg-source -x $src/*.dsc /build/source
+          cd /build/source
+          debuild -b -us -uc -j6
+          cp ../*.deb $out
+        '';
+        memSize = 8192;
+        diskImage = diskImage {extraPackages = debBuildDeps ++ extra; };
+      };
+    in [
+      { name = "${name}-src"; value = dsc; }
+      { name = "${name}-i386"; value = deb "i386" b32; }
+      { name = "${name}-amd64"; value = deb "amd64" b64; }
+    ])));
+
+in {
+  inherit sourcePrep fetchDependencies fastTests;
+} // debs # // rpms
