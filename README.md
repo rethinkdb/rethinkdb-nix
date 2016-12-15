@@ -1,7 +1,7 @@
 # Continuous integration for RethinkDB
 
-These scripts run on my [Thanos](http://thanos.atnnn.com:3000) build
-server, allowing us to build RethinkDB, run the tests and build
+These scripts run on my [Thanos](https://thanos.atnnn.com:3443) build
+server, allowing us to build [RethinkDB](http://github.com/rethinkdb/rethinkdb), run the tests and build
 packages.
 
 To add your own server to the build farm contact me at
@@ -19,11 +19,11 @@ Build artifacts and packages haven't been organised yet, but most of
 them are available.
 
 * Open the RethinkDB project page at
-  http://thanos.atnnn.com:3000/project/rethinkdb
+  https://thanos.atnnn.com:3443/project/rethinkdb
 
 * Click on the branch you want to download, and locate the *Jobs*
   tab. For example, the `next` branch:
-  http://thanos.atnnn.com:3000/jobset/rethinkdb/next#tabs-jobs
+  https://thanos.atnnn.com:3443/jobset/rethinkdb/next#tabs-jobs
 
 * Click the green checkbox next to the package you want to open the
   build page

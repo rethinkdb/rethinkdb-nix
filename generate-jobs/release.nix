@@ -35,14 +35,14 @@ let
 
   writeText = pkgs.writeText;
 
-  # writeText = name: text: derivation {
-  #   inherit name text;
-  #   system = builtins.currentSystem;
-  #   builder = "${pkgs.bash}/bin/bash";
-  #   args = [ ( builtins.toFile "builder.sh" ''
-  #     echo "$text" > $out
-  #   '' ) ];
-  # };
+  writeText_ = name: text: derivation {
+    inherit name text;
+    system = builtins.currentSystem;
+    builder = "${pkgs.bash}/bin/bash";
+    args = [ ( builtins.toFile "builder.sh" ''
+      echo "$text" >  $out
+    '' ) ];
+  };
 in {
-  jobsets = writeText "jobsets.json" (builtins.toJSON specs);
+  jobsets = writeText_ "jobsets.json" (builtins.toJSON specs);
 }
