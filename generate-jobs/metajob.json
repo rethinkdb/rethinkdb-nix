@@ -1,0 +1,15 @@
+{
+    "enabled": 1,
+    "hidden": true,
+    "description": "Meta-job",
+    "nixexprinput": "declInput",
+    "nixexprpath": "generate-jobs/release.nix",
+    "checkinterval": 0,
+    "schedulingshares": 100,
+    "enableemail": true,
+    "emailoverride": "",
+    "keepnr": 3,
+    "inputs": {
+	"nixpkgs": { "type": "path", "value": "/nix/var/nix/profiles/per-user/root/channels/nixos/nixpkgs", "emailresponsible": false }
+    }
+}
