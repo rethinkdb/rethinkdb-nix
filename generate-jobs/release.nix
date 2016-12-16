@@ -73,7 +73,7 @@ let
   prSpecs = builtins.listToAttrs (map (pr: {
     name = "PR${toString pr.number}-${pr.user.login}";
     value = jobset {
-      repo = pr.head.repo.full_name or "rethinkdb/${pr.user.login}";
+      repo = pr.head.repo.full_name or "${pr.user.login}/rethinkdb";
       branch = pr.head.ref;
       checkinterval = 600;
       attrs = { description = pr.title; enabled = if pr.head == null then 0 else 1; };
