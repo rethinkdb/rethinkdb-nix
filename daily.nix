@@ -1,1 +1,1 @@
-import <rethinkdb-nix/release.nix>
+import <rethinkdb-nix/all.nix>

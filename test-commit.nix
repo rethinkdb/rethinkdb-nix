@@ -1,4 +1,4 @@
-{ inherit (import <rethinkdb-nix/release.nix>) fetchDependencies sourcePrep sourceTgz fastTests; }
+{ inherit (import <rethinkdb-nix/all.nix>) fetchDependencies sourcePrep sourceTgz fastTests; }
 
 
 

@@ -1,7 +1,7 @@
 {
     "enabled": 1,
     "hidden": true,
-    "description": "Meta-job",
+    "description": "Meta-job v4",
     "nixexprinput": "declInput",
     "nixexprpath": "generate-jobs/release.nix",
     "checkinterval": 600,
@@ -10,7 +10,6 @@
     "emailoverride": "",
     "keepnr": 3,
     "inputs": {
-	"nixpkgs": { "type": "path", "value": "/nix/store/i06cff88anv9p52li3l6cdvd0w073n61-nixos-16.09.1270.8bfa4ce/nixos", "emailresponsible": false },
-	"prs": { "type": "nix", "value": "1", "emailresponsible": false }
+	"nixpkgs": { "type": "path", "value": "/nix/store/i06cff88anv9p52li3l6cdvd0w073n61-nixos-16.09.1270.8bfa4ce/nixos", "emailresponsible": false }
     }
 }

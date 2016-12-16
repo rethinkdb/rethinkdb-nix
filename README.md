@@ -15,8 +15,7 @@ performance tests.
 Thanos currently builds packages for Ubuntu and Centos. I will try to
 add more packages if there is any demand.
 
-Build artifacts and packages haven't been organised yet, but most of
-them are available.
+Build artifacts and packages haven't been organised yet, but they are available:
 
 * Open the RethinkDB project page at
   https://thanos.atnnn.com:3443/project/rethinkdb
@@ -25,8 +24,7 @@ them are available.
   tab. For example, the `next` branch:
   https://thanos.atnnn.com:3443/jobset/rethinkdb/next#tabs-jobs
 
-* Click the green checkbox next to the package you want to open the
-  build page
+* Click the green checkbox next to the package you want
 
 * Locate the download links in the Build Products section
 
@@ -47,13 +45,13 @@ Syntax-check the scripts:
 
 ```
 cd rethinkdb-nix
-nix-instantiate -I .. release.nix
+nix-instantiate -I .. all.nix
 ```
 
 Build a RethinkDB source tarball:
 
 ```
-nix-build -I .. release.nix -A sourceTgz
+nix-build -I .. all.nix -A sourceTgz
 ```
 
 `nix-build` parameters that can help debug errors are:

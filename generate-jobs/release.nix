@@ -31,16 +31,7 @@ let
     };
   } // attrs;
 
-  metajobOrig = builtins.fromJSON (builtins.readFile <declInput/generate-jobs/metajob.json>);
-  metajob = metajobOrig // {
-    inputs = metajobOrig.inputs // {
-      prs = metajobOrig.inputs.prs // {
-        type = "sysbuild";
-	value = "listPullRequests:json";
-      };
-    };
-  };
-
+  metajob = builtins.fromJSON (builtins.readFile <declInput/generate-jobs/metajob.json>);
   mainBranches = ["next" "v2.3.x"];
 
   mainSpecs = builtins.foldl' (a: b: a // b) {} (map (branch: {
@@ -71,12 +62,17 @@ let
   };
 
   prSpecs = builtins.listToAttrs (map (pr: {
-    name = "PR${toString pr.number}-${pr.user.login}";
+    name = "${toString pr.number}-${pr.user.login}";
     value = jobset {
       repo = pr.head.repo.full_name or "${pr.user.login}/rethinkdb";
       branch = pr.head.ref;
       checkinterval = 600;
-      attrs = { description = pr.title; enabled = if pr.head == null then 0 else 1; };
+      attrs = {
+        description = "[${pr.milestone.title or "unassigned"}] ${pr.title}";
+
+	# TODO: doesn't work. Maybe use 0 or 1 instead of true/false?
+	# enabled = if pr.head == null then false else true;
+      };
     };
   }) (builtins.fromJSON (builtins.unsafeDiscardStringContext (builtins.readFile pullRequests))));
 

@@ -1,124 +1,6 @@
-# TODO link from configuration.nix to here:
-#  - save core dumps
-#  - increase process count limit and fd limit for builders
-
-with rec {
-  inherit (builtins)
-    toFile readFile concatStringsSep unsafeDiscardStringContext
-    listToAttrs match head tail toJSON toPath elemAt getAttr length
-    trace genList isString fromJSON getEnv concatLists toString
-    isAttrs hasAttr;
-  foldl = builtins.foldl'; #'
-  tracing = x: trace x x;
-  for = xs: f: map f xs;
-  pkgs = import <nixpkgs> {};
-};
-let
-  mkBuilder = script: toFile "builder.sh" ("source $stdenv/setup\n" + script);
-
-  scripts = concatStringsSep " " [
-    "configure" "drivers/convert_protofile" "scripts/gen-version.sh"
-    "mk/support/pkg/pkg.sh" "test/run" "external/v8_*/build/gyp/gyp"
-  ];
-  patchScripts = ''
-    for script in ${scripts}; do
-      cp $script $script.orig
-      patchShebangs $script
-    done
-  '';
-  unpatchScripts = dest: ''
-    for script in ${scripts}; do
-      test ! -e $script.orig || cp $script.orig ${dest}/$script
-    done
-    '';
-
-  make = "make -j $NIX_BUILD_CORES";
-
-  skip_tests = [
-    # known failures (TODO: fix upstream)
-    # "unit.RDBBtree"
-    "unit.UtilsTest"
-    "unit.RDBProtocol"
-    "unit.RDBBtree"
-    # Slow tests
-    "unit.DiskBackedQueue"
-  ];
-  skip_tests_filter =
-      concatStringsSep " " (map (t: "'!" + t + "'") skip_tests);
-
-  versionFile = pkgs.stdenv.mkDerivation {
-    name = "rethinkdb-version";
-    src = <rethinkdb>;
-    buildInputs = [ pkgs.git ];
-    builder = mkBuilder ''
-      cd $src
-      echo -n $(bash scripts/gen-version.sh) > $out
-    '';
-  };
-
-  replace = pattern: replacement: string:
-    let group = match "(.*)(${pattern})(.*)" string;
-    in if group == null then string else
-      replace pattern replacement (elemAt group 0)
-      + (if isString replacement then replacement
-         else replacement (genList (i: elemAt group (i + 2)) (length group - 3)))
-      + elemAt group (length group - 1);
-
-  split = string:
-    let group = tracing (match "([^ ]*) +(.*)" string);
-    in if group == null then [string]
-    else [(head group)] ++ split (elemAt group 1);
-
-  depInfo = dep: let
-    source = readFile (toPath "${<rethinkdb>}/mk/support/pkg/${dep}.sh");
-    find = var: let go = source: val:
-      let group = match "(.*?)\n *${var}=\"?([^\"\n]*)\"?\n.*" source;
-      in if group == null then val else go (head group) (elemAt group 1);
-    in go source null;
-  in rec {
-    version = replace "/-patched.*/" "" (find "version");
-    url = replace "\\$\\{?version([^}]*})?" version (find "src_url");
-    sha1 = find "src_url_sha1";
-  };
-
-  stripForFetching = dep: src: pkgs.stdenv.mkDerivation {
-    # TODO
-  };
-
-  mkFetch = fetch_list: pkgs.stdenv.mkDerivation (rec {
-    name = "rethinkdb-dependencies-src";
-    builder = mkBuilder ("mkdir $out\n" +
-      concatStringsSep "\n"
-        (map (dep: "cp -r --no-preserve=all ${"$"}${dep}/* $out/") fetch_list));
-    buildInputs = [ <rethinkdb> ];
-  } // listToAttrs (map (dep: let info = depInfo dep; in {
-    name = dep;
-    value = if info.url != null
-      then pkgs.stdenv.mkDerivation {
-        name = "rethinkdb-fetch-${dep}-${info.version}";
-        src = pkgs.fetchurl {
-          url = info.url;
-          sha1 = info.sha1;
-        };
-        builder = mkBuilder ''
-          mkdir -p $out/external/.cache
-          ln -s $src $out/external/.cache/''${src#*-}
-        '';
-      } else pkgs.stdenv.mkDerivation {
-	name = "rethinkdb-fetch-${dep}-${info.version}";
-	src = stripForFetching dep <rethinkdb>;
-	builder = mkBuilder ''
-	  ${src.fetch}
-	  mkdir $out
-	  cp -r external/${dep}_* $out/
-	'';
-      };
-  }) fetch_list));
-
-  fetchList = ["v8" "jemalloc"];
-
-  fetchDependencies = mkFetch fetchList;
-
+with import ./prelude.nix;
+with { inherit (import ./source.nix) sourcePrep mkFetch; };
+rec {
   debBuildDeps = [
     "build-essential" "protobuf-compiler" "python"
     "libprotobuf-dev" "libcurl4-openssl-dev"
@@ -153,98 +35,6 @@ let
       # epel
       "protobuf-devel" "protobuf-static" "jemalloc-devel"
     ];
-  };
-
-  sourcePrep = pkgs.stdenv.mkDerivation rec {
-    name = "rethinkdb-${version}";
-    version = unsafeDiscardStringContext (readFile versionFile);
-    builder = mkBuilder ''
-
-      # TODO: https://github.com/NixOS/nixpkgs/issues/13744
-      export SSL_CERT_FILE=$cacert/etc/ssl/certs/ca-bundle.crt
-
-      mkdir rethinkdb
-      cp -r $src/* rethinkdb/
-      chmod -R u+w rethinkdb
-      cd rethinkdb
-
-      # TODO: move upstream
-      sed -i 's/reset-dist-dir: FORCE | web-assets/reset-dist-dir: FORCE/' mk/packaging.mk
-      sed -i 's/install: build/install:/' packaging/debian/rules
-
-      echo "${version}" > VERSION.OVERRIDE
-      cp -r --no-preserve=all $fetchDependencies/* .
-      ${patchScripts}
-      ./configure --fetch jemalloc
-      ${make} dist-dir DIST_DIR=$out
-      ${unpatchScripts "$out"}
-    '';
-    __noChroot = true;
-    src = <rethinkdb>;
-    inherit fetchDependencies;
-    buildInputs = with pkgs; [
-      protobuf
-      python
-      nodejs
-      nodePackages.coffee-script
-      nodePackages.browserify
-      zlib
-      openssl
-      curl
-      boost
-      git
-      cacert
-      nix
-    ];
-  };
-
-  sourceTgz = pkgs.stdenv.mkDerivation rec {
-    name = "rethinkdb-${src.version}-source";
-    src = sourcePrep;
-    buildInputs = [ pkgs.gnutar ];
-    builder = mkBuilder ''
-      mkdir $out
-      cd $src
-      tar --transform 's|^.|rethinkdb-${src.version}|' -zcf $out/rethinkdb-${src.version}.tgz ./
-      mkdir $out/nix-support
-      echo file source-dist $out/rethinkdb-${src.version}.tgz > $out/nix-support/hydra-build-products
-    '';
-  };
-
-  fastTests = pkgs.stdenv.mkDerivation rec {
-    name = "rethinkdb-fast-tests-results-${src.version}";
-    src = sourcePrep;
-    buildInputs = with pkgs; [
-      protobuf
-      python27Full
-      nodejs
-      nodePackages.coffee-script
-      nodePackages.browserify
-      zlib
-      openssl
-      boost
-      curl
-      git # TODO
-    ];
-    builder = mkBuilder ''
-      cp -r $src/* .
-      chmod -R u+w .
-      patchShebangs .
-
-      # TODO upstream remove dependency on git
-      git init
-      git config user.email joe@example.com
-      git config user.name Joe
-      git commit --allow-empty -m "empty"
-      
-      ./configure
-      ${make} DEBUG=1 
-      mkdir -p $out/nix-support
-      test/run -H -j $((NIX_BUILD_CORES / 2)) unit cpplint ${skip_tests_filter} || touch $out/nix-support/failed
-      test -e test/results/*/test_results.html
-      cp -r test/results/* $out
-      echo report html $out/*/test_results.html > $out/nix-support/hydra-build-products
-    '';
   };
 
   vmBuild = { diskImage, name, build, attrs ? {}, ncpu ? 6, memSize ? 4096 }:
@@ -307,7 +97,7 @@ let
     urlPrefixes = (distro.urlPrefixes or [ distro.urlPrefix ]) ++ [ repo.prefix ];
   };
   customRpmDistros = with pkgs; with vmTools; with rpmDistros; rpmDistros // {
-    centos65i686 = addRPMRepo (rpmExtraRepos.centos6 "i686") centos65i686;
+    centos65i386 = addRPMRepo (rpmExtraRepos.centos6 "i686") centos65i386;
     centos65x86_64 = addRPMRepo (rpmExtraRepos.centos6 "x86_64") centos65x86_64;
     centos71x86_64 = addRPMRepo rpmExtraRepos.centos7 centos71x86_64;
   };
@@ -394,9 +184,10 @@ let
       { name = "centos6";
 	arch = "x86_64";
         image = centos65x86_64; }
-      { name = "centos6";
-	arch = "i686";
-        image = centos65i686; }
+      # TODO: build fails with "package bzip2 doesn't exist"
+      # { name = "centos6";
+      # 	arch = "i386";
+      #   image = centos65i386; }
     ] ({ name, arch, image, extra ? [] }: let
       rpm = vmBuild {
         name = "rethinkdb-${sourcePrep.version}-${name}-${arch}";
@@ -430,8 +221,4 @@ let
       };
   in { name = "${name}-${arch}"; value = rpm; }));
 
-  allJobs = debs // rpms // {
-    inherit sourcePrep fetchDependencies fastTests sourceTgz;
-  };
-
-in allJobs
+}
