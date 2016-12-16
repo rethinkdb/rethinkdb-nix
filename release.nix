@@ -7,7 +7,7 @@ with rec {
     toFile readFile concatStringsSep unsafeDiscardStringContext
     listToAttrs match head tail toJSON toPath elemAt getAttr length
     trace genList isString fromJSON getEnv concatLists toString
-    isAttrs;
+    isAttrs hasAttr;
   foldl = builtins.foldl'; #'
   tracing = x: trace x x;
   for = xs: f: map f xs;
@@ -63,6 +63,11 @@ let
       + (if isString replacement then replacement
          else replacement (genList (i: elemAt group (i + 2)) (length group - 3)))
       + elemAt group (length group - 1);
+
+  split = string:
+    let group = tracing (match "([^ ]*) +(.*)" string);
+    in if group == null then [string]
+    else [(head group)] ++ split (elemAt group 1);
 
   depInfo = dep: let
     source = readFile (toPath "${<rethinkdb>}/mk/support/pkg/${dep}.sh");
@@ -423,11 +428,10 @@ let
         memSize = 8192;
         diskImage = image { extraPackages = getAttr name rpmBuildDeps; };
       };
-    in { name = "${name}-${arch}"; value = rpm; }));
+  in { name = "${name}-${arch}"; value = rpm; }));
 
-in ({
-  inherit sourcePrep fetchDependencies fastTests sourceTgz;
-} // debs // rpms
-).TODO or {
-  inherit fastTests;
-}
+  allJobs = debs // rpms // {
+    inherit sourcePrep fetchDependencies fastTests sourceTgz;
+  };
+
+in allJobs
