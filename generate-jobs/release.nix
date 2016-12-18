@@ -13,21 +13,13 @@ let
     emailoverride = "";
     keepnr = 10;
     inputs = {
-      nixpkgs = {
-        type = "path";
-        value = metajob.inputs.nixpkgs.value;
-        emailresponsible = false;
-      };
       rethinkdb = {
         type = "git";
         value = "git://github.com/${repo} ${branch} 1";
         emailresponsible = false;
       };
-      rethinkdb-nix = { 
-        type = "path";
-        value = metajob.inputs.rethinkdb-nix.value;
-        emailresponsible = false;
-      };
+      rethinkdb-nix = metajob.inputs.rethinkdb-nix;
+      nixpkgs = metajob.inputs.nixpkgs;
     };
   } // attrs;
 
