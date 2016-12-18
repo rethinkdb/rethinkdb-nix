@@ -34,15 +34,18 @@ rec {
       cp -r build/external $out/build/
     '';
     deps = fetchList;
+
+    # TODO: should eventually not need this
     __noChroot = true;
   } // listToAttrs (for fetchList (dep:
       { name = dep; value = getAttr dep fetchDependencies; })));
 
+  debugBuild = debugBuildWith pkgs.gcc (tracing builtins.currentSystem);
   debugBuildWith = cc: system: pkgs.stdenv.mkDerivation rec {
     name = "rethinkdb-${src.version}-build-debug-${cc.name}-${system}";
     inherit system;
     src = sourcePrep;
-    deps = buildDeps pkgs.gcc system;
+    deps = buildDepsWith pkgs.gcc system;
     buildInputs = with pkgs; [
       cc
       protobuf
@@ -63,13 +66,11 @@ rec {
       patchShebangs .      
       ./configure
       cp -r $deps/* .
-      ${make} DEBUG=1 
+      ${make} DEBUG=1 ALLOW_WARNINGS=1 # TODO: disallow warnings
       mkdir -p$out/build/debug
       cp build/debug/rethinkdb{,-unittest} $out/build/debug
     '';
   };
-
-  debugBuild = debugBuildWith pkgs.gcc builtins.currentSystem;
 
   matrixBuilds =
     listToAttrs (for (with pkgs; [ gcc48 gcc49 gcc5 gcc6 ]) (cc:
