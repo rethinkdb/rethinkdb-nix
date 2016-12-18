@@ -3,7 +3,7 @@ rec {
     toFile readFile concatStringsSep unsafeDiscardStringContext
     listToAttrs match head tail toJSON toPath elemAt getAttr length
     trace genList isString fromJSON getEnv concatLists toString
-    isAttrs hasAttr;
+    isAttrs hasAttr attrNames;
   foldl = builtins.foldl'; #'
   tracing = x: trace x x;
   for = xs: f: map f xs;

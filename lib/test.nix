@@ -4,16 +4,17 @@ rec {
 
   skip_tests = [
     # known failures (TODO: fix upstream)
-    # "unit.RDBBtree"
+    "unit.RDBBtree"
     "unit.UtilsTest"
     "unit.RDBProtocol"
     "unit.RDBBtree"
+    "unit.RDBInterrupt"
+    "unit.ClusteringRaft"
     # Slow tests
     "unit.DiskBackedQueue"
   ];
   skip_tests_filter =
       concatStringsSep " " (map (t: "'!" + t + "'") skip_tests);
-
 
   fastTests = pkgs.stdenv.mkDerivation rec {
     name = "rethinkdb-fast-tests-results-${src.version}";

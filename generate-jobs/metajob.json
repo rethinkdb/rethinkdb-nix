@@ -1,8 +1,8 @@
 {
     "enabled": 1,
     "hidden": true,
-    "description": "Meta-job v4",
-    "nixexprinput": "declInput",
+    "description": "Meta-job v6",
+    "nixexprinput": "rethinkdb-nix",
     "nixexprpath": "generate-jobs/release.nix",
     "checkinterval": 600,
     "schedulingshares": 100,
@@ -10,6 +10,8 @@
     "emailoverride": "",
     "keepnr": 3,
     "inputs": {
-	"nixpkgs": { "type": "path", "value": "/nix/store/i06cff88anv9p52li3l6cdvd0w073n61-nixos-16.09.1270.8bfa4ce/nixos", "emailresponsible": false }
+	"nixpkgs": { "type": "path", "value": "/nix/store/i06cff88anv9p52li3l6cdvd0w073n61-nixos-16.09.1270.8bfa4ce/nixos", "emailresponsible": false },
+	"rethinkdb-nix": { "type": "path", "value": "/home/atnnn/code/rethinkdb-nix", "emailresponsible": false },
+	"pull-requests": { "type": "path", "value": "https://api.github.com/repos/rethinkdb/rethinkdb/pulls", "emailresponsible": false }
     }
 }

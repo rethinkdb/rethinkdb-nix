@@ -1,6 +1,6 @@
+{ pkgs ? import <nixpkgs> {},
+  pullRequests ? <pull-requests> }:
 let
-  pkgs = import <nixpkgs> {};
-
   jobset = { branch, job ? "test-commit", attrs ? {}, repo ? "rethinkdb/rethinkdb", checkinterval ? 0 }: {
     enabled = 1;
     hidden = false;
@@ -23,15 +23,15 @@ let
         value = "git://github.com/${repo} ${branch} 1";
         emailresponsible = false;
       };
-      rethinkdb-nix = {
+      rethinkdb-nix = { 
         type = "path";
-        value = "/home/atnnn/code/rethinkdb-nix";
+        value = metajob.inputs.rethinkdb-nix.value;
         emailresponsible = false;
       };
     };
   } // attrs;
 
-  metajob = builtins.fromJSON (builtins.readFile <declInput/generate-jobs/metajob.json>);
+  metajob = builtins.fromJSON (builtins.readFile <rethinkdb-nix/generate-jobs/metajob.json>);
   mainBranches = ["next" "v2.3.x"];
 
   mainSpecs = builtins.foldl' (a: b: a // b) {} (map (branch: {
@@ -50,16 +50,6 @@ let
       };
     };
   } ) mainBranches);
-
-  pullRequests = pkgs.stdenv.mkDerivation {
-    name = "rethinkdb-pull-requests-${toString builtins.currentTime}.json";
-    curl = pkgs.curl;
-    builder = builtins.toFile "builder.sh" ''
-      $curl/bin/curl -q "https://api.github.com/repos/rethinkdb/rethinkdb/pulls?state=open&sort=updated" > $out;
-    '';
-    __noChroot = true;
-    preferLocalBuild = true;
-  };
 
   prSpecs = builtins.listToAttrs (map (pr: {
     name = "${toString pr.number}-${pr.user.login}";
