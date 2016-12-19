@@ -20,6 +20,7 @@ rec {
     name = "rethinkdb-fast-tests-results-${src.version}";
     src = sourcePrep;
     buildInputs = with pkgs; [
+      gcc #TODO: just testing
       protobuf
       python27Full
       nodejs

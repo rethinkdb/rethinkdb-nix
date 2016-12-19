@@ -1,24 +1,24 @@
 with (import ./prelude.nix);
 with { inherit (import ./source.nix) sourcePrep fetchList fetchDependencies; };
 rec {
-  buildDeps = buildDepsWith pkgs.gcc builtins.currentSystem;
-  buildDepsWith = cc: system: pkgs.stdenv.mkDerivation (rec {
+  buildDeps = buildDepsWith reCC builtins.currentSystem;
+  buildDepsWith = cc: system: mkSimpleDerivation (rec {
     name = "rethinkdb-deps-build-debug-${cc.name}-${system}";
     inherit system;
-    rethinkdb = unsafeDiscardStringContext (toString <rethinkdb>);
     buildInputs = with pkgs; [
       cc
-      protobuf
+      protobuf protobuf.lib
       python27Full
       nodejs
       nodePackages.coffee-script
       nodePackages.browserify
       zlib
-      openssl
-      boost
-      curl
+      openssl.dev openssl.out
+      boost.dev
+      curl curl.out
     ];
-    builder = mkStdBuilder ''
+    buildCommand = ''
+      set -x
       cp -r $rethinkdb/* .
       chmod -R u+w .
       for x in $deps; do
@@ -27,20 +27,23 @@ rec {
       done
       patchShebangs . > /dev/null
       ./configure --fetch jemalloc
-      ${make} fetch
+      ${make} fetch 
       patchShebangs external > /dev/null
       ${make} support
       mkdir -p $out/build/
       cp -r build/external $out/build/
     '';
-    deps = fetchList;
+    env = {
+      rethinkdb = unsafeDiscardStringContext (toString <rethinkdb>);
+      deps = fetchList;
 
-    # TODO: should eventually not need this
-    __noChroot = true;
-  } // listToAttrs (for fetchList (dep:
-      { name = dep; value = getAttr dep fetchDependencies; })));
+      # TODO: should eventually not need this
+      __noChroot = true; 
+    } // listToAttrs (for fetchList (dep:
+      { name = dep; value = getAttr dep fetchDependencies; }));
+  });
 
-  debugBuild = debugBuildWith pkgs.gcc (tracing builtins.currentSystem);
+  debugBuild = debugBuildWith pkgs.gcc builtins.currentSystem;
   debugBuildWith = cc: system: pkgs.stdenv.mkDerivation rec {
     name = "rethinkdb-${src.version}-build-debug-${cc.name}-${system}";
     inherit system;
@@ -63,6 +66,8 @@ rec {
       chmod -R u+w .
       cp -r $deps/* .
       chmod -R u+w .
+      ls -l build/external/v8_3.30.33.16/lib/libv8_base.a
+      sha1sum build/external/v8_3.30.33.16/lib/libv8_base.a
       patchShebangs .      
       ./configure
       cp -r $deps/* .
