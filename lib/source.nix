@@ -1,4 +1,5 @@
 with import ./prelude.nix;
+with { inherit (import ./build.nix) rethinkdbBuildInputs; };
 rec {
   scripts = concatStringsSep " " [
     "configure" "drivers/convert_protofile" "scripts/gen-version.sh"
@@ -16,11 +17,11 @@ rec {
     done
   '';
 
-  versionFile = pkgs.stdenv.mkDerivation {
+  versionFile = mkSimpleDerivation {
     name = "rethinkdb-version";
-    src = <rethinkdb>;
+    env.src = <rethinkdb>;
     buildInputs = [ pkgs.git ];
-    builder = mkStdBuilder ''
+    buildCommand = ''
       cd $src
       echo -n $(bash scripts/gen-version.sh) > $out
     '';
@@ -32,61 +33,72 @@ rec {
       let group = match "(.*?)\n *${var}=\"?([^\"\n]*)\"?\n.*" source;
       in if group == null then val else go (head group) (elemAt group 1);
     in go source null;
+    rawUrl = find "src_url";
   in rec {
     version = replace "/-patched.*/" "" (find "version");
-    url = replace "\\$\\{?version([^}]*})?" version (find "src_url");
+    url = if rawUrl == null then null
+      else replace "\\$\\{?version([^}]*})?" version rawUrl;
     sha1 = find "src_url_sha1";
-  };
-
-  stripForFetching = dep: src: pkgs.stdenv.mkDerivation {
-    # TODO
-  };
-
-  mkFetch = fetch_list: pkgs.stdenv.mkDerivation (rec {
-    name = "rethinkdb-dependencies-src";
-    builder = mkStdBuilder ("mkdir $out\n" +
-      concatStringsSep "\n"
-        (map (dep: "cp -r --no-preserve=all ${"$"}${dep}/* $out/") fetch_list));
-    buildInputs = [ <rethinkdb> ];
-  } // listToAttrs (map (dep: let info = depInfo dep; in {
+    varName = replace "-" "_" dep;
     name = dep;
-    value = if info.url != null
-      then pkgs.stdenv.mkDerivation {
-        name = "rethinkdb-fetch-${dep}-${info.version}";
-	# TODO: doesn't work on hydra?
-        # src = pkgs.fetchurl {
-        #   url = info.url;
-        #   sha1 = info.sha1;
-        # };
-	buildInputs = [ pkgs.curl pkgs.coreutils ];
-        builder = mkStdBuilder ''
-          mkdir -p $out/external/.cache
-          # ln -s $src $out/external/.cache/''${src#*-}
-	  src="${info.url}"
-	  curl "$src" > $out/external/.cache/''${src##*/}
-	  # TODO: check sha1
-        '';
-	__noChroot = true;
-      } else pkgs.stdenv.mkDerivation {
-	name = "rethinkdb-fetch-${dep}-${info.version}";
-	src = stripForFetching dep <rethinkdb>;
-	builder = mkStdBuilder ''
-	  ${src.fetch}
-	  mkdir $out
-	  cp -r external/${dep}_* $out/
-	'';
-      };
-  }) fetch_list));
+  };
 
-  fetchList = ["v8" "jemalloc"];
+  mkFetch = fetch_list: let
+    depInfos = map (dep: depInfo dep) fetchList;
+  in mkSimpleDerivation (rec {
+    name = "rethinkdb-dependencies-src";
+    buildCommand = "set -x\n mkdir $out\n" +
+      concatStringsSep "\n"
+        (map (info: "cp -r --no-preserve=all ${"$"}${info.varName}/* $out/") depInfos);
+    buildInputs = [ <rethinkdb> ];
+    env = listToAttrs (concatLists (map (info: let
+        dep = info.name;
+        bothNames = val: [ { name = dep; value = val; } { name = info.varName; value = val; } ];
+      in bothNames (if info.url != null
+        then mkSimpleDerivation {
+          name = "rethinkdb-fetch-${dep}-${info.version}";
+          # TODO: doesn't work on hydra?
+          # src = pkgs.fetchurl {
+          #   url = info.url;
+          #   sha1 = info.sha1;
+          # };
+          buildInputs = [ pkgs.curl pkgs.coreutils ];
+          buildCommand = ''
+            mkdir -p $out/external/.cache
+            # ln -s $src $out/external/.cache/''${src#*-}
+            src="${info.url}"
+            curl "$src" > $out/external/.cache/''${src##*/}
+            # TODO: check sha1
+          '';
+          env.__noChroot = true;
+        } else mkSimpleDerivation {
+          name = "rethinkdb-fetch-${dep}-${info.version}";
+          buildCommand = ''
+            cp -r $rethinkdb/* .
+            chmod -R u+w .
+            ./configure --fetch jemalloc --fetch ${dep}
+            make fetch-${dep}
+            mkdir -p $out/external
+            cp -r external/${dep}_* $out/external/
+          '';
+          buildInputs = rethinkdbBuildInputs ++ [ reCC ];
+          env = {
+            __noChroot = true;
+            rethinkdb = unsafeDiscardStringContext (toString <rethinkdb>);
+          }; 
+        })
+      ) depInfos));
+  });
+
+  fetchList = ["v8" "jemalloc" "admin-deps" ];
+  fetchInfos = map (dep: depInfo dep) fetchList;
 
   fetchDependencies = mkFetch fetchList;
 
 
-  sourcePrep = pkgs.stdenv.mkDerivation rec {
-    name = "rethinkdb-${version}";
-    version = unsafeDiscardStringContext (readFile versionFile);
-    builder = mkStdBuilder ''
+  sourcePrep = mkSimpleDerivation rec {
+    name = "rethinkdb-${env.version}";
+    buildCommand = ''
 
       # TODO: https://github.com/NixOS/nixpkgs/issues/13744
       export SSL_CERT_FILE=$cacert/etc/ssl/certs/ca-bundle.crt
@@ -100,43 +112,32 @@ rec {
       sed -i 's/reset-dist-dir: FORCE | web-assets/reset-dist-dir: FORCE/' mk/packaging.mk
       sed -i 's/install: build/install:/' packaging/debian/rules
 
-      echo "${version}" > VERSION.OVERRIDE
+      echo "${env.version}" > VERSION.OVERRIDE
       cp -r --no-preserve=all $fetchDependencies/* .
       ${patchScripts}
       ./configure --fetch jemalloc
       ${make} dist-dir DIST_DIR=$out
       ${unpatchScripts "$out"}
     '';
-    __noChroot = true;
-    src = <rethinkdb>;
-    inherit fetchDependencies;
-    buildInputs = with pkgs; [
-      protobuf
-      python
-      nodejs
-      nodePackages.coffee-script
-      nodePackages.browserify
-      zlib
-      openssl
-      curl
-      boost
-      git
-      cacert
-      nix
-      unzip
-    ];
+    env = {
+      version = unsafeDiscardStringContext (readFile versionFile);
+      __noChroot = true;
+      src = <rethinkdb>;
+      inherit fetchDependencies;
+    };
+    buildInputs = with pkgs; rethinkdbBuildInputs ++ [ git cacert nix unzip ];
   };
 
-  sourceTgz = pkgs.stdenv.mkDerivation rec {
-    name = "rethinkdb-${src.version}-source";
-    src = sourcePrep;
+  sourceTgz = mkSimpleDerivation rec {
+    name = "rethinkdb-${env.src.version}-source";
+    env.src = sourcePrep;
     buildInputs = [ pkgs.gnutar ];
-    builder = mkStdBuilder ''
+    buildCommand = ''
       mkdir $out
       cd $src
-      tar --transform 's|^.|rethinkdb-${src.version}|' -zcf $out/rethinkdb-${src.version}.tgz ./
+      tar --transform 's|^.|rethinkdb-${env.src.version}|' -zcf $out/rethinkdb-${env.src.version}.tgz ./
       mkdir $out/nix-support
-      echo file source-dist $out/rethinkdb-${src.version}.tgz > $out/nix-support/hydra-build-products
+      echo file source-dist $out/rethinkdb-${env.src.version}.tgz > $out/nix-support/hydra-build-products
     '';
   };
 }

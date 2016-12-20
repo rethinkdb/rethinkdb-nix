@@ -1,5 +1,6 @@
 with import ./prelude.nix;
 with { inherit (import ./source.nix) sourcePrep; };
+with { inherit (import ./build.nix) debugBuild rethinkdbBuildInputs; };
 rec {
 
   skip_tests = [
@@ -16,24 +17,16 @@ rec {
   skip_tests_filter =
       concatStringsSep " " (map (t: "'!" + t + "'") skip_tests);
 
-  fastTests = pkgs.stdenv.mkDerivation rec {
-    name = "rethinkdb-fast-tests-results-${src.version}";
-    src = sourcePrep;
-    buildInputs = with pkgs; [
-      gcc #TODO: just testing
-      protobuf
-      python27Full
-      nodejs
-      nodePackages.coffee-script
-      nodePackages.browserify
-      zlib
-      openssl
-      boost
-      curl
-      git # TODO
-    ];
-    builder = mkStdBuilder ''
-      cp -r $src/* .
+  fastTests = mkSimpleDerivation rec {
+    name = "rethinkdb-fast-tests-results-${env.rethinkdb.version}";
+    env = {
+      rethinkdb = sourcePrep;
+      inherit debugBuild;
+    };
+    buildInputs = rethinkdbBuildInputs ++ [ pkgs.git ];
+    buildCommand = ''
+      cp -r $rethinkdb/* .
+      cp -r $debugBuild/* .
       chmod -R u+w .
       patchShebangs .
 
@@ -43,8 +36,6 @@ rec {
       git config user.name Joe
       git commit --allow-empty -m "empty"
       
-      ./configure
-      ${make} DEBUG=1 
       mkdir -p $out/nix-support
       test/run -H -j $((NIX_BUILD_CORES / 2)) unit cpplint ${skip_tests_filter} || touch $out/nix-support/failed
       test -e test/results/*/test_results.html

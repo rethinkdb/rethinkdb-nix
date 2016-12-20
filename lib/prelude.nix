@@ -9,6 +9,8 @@ rec {
   for = xs: f: map f xs;
   pkgs = import <nixpkgs> {};
 
+  forAttrs = obj: f: pkgs.lib.mapAttrs f obj;
+
   replace = pattern: replacement: string:
     let group = match "(.*)(${pattern})(.*)" string;
     in if group == null then string else
@@ -48,7 +50,10 @@ rec {
     inherit system name;
     builder = "${pkgs.bash}/bin/bash";
     buildInputs =  buildInputs ++ (if useDefaultBuildInputs
-      then with pkgs; [coreutils findutils gnugrep gnused bash patchShebangs gnumake gnutar bzip2 binutils gawk]
+      then with pkgs; [
+        coreutils findutils gnugrep gnused bash patchShebangs gnumake
+	gnutar bzip2 binutils gawk gzip patch
+      ]
       else []);
     args = [ (toFile "builder.sh" (unsafeDiscardStringContext ''
       set -eu
@@ -61,6 +66,7 @@ rec {
       test ! -v LIBRARY_PATH || export LIBRARY_PATH=''${LIBRARY_PATH%:}
       test ! -v INCLUDE_PATH || export C_INCLUDE_PATH=''${C_INCLUDE_PATH%:}
       test ! -v INCLUDE_PATH || export CPLUS_INCLUDE_PATH=''${CPLUS_INCLUDE_PATH%:}
+      export hardeningDisable=all
       ${buildCommand}
     '')) ];
   });
