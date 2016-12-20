@@ -54,7 +54,7 @@ rec {
     inherit system;
     env = {
       src = sourcePrep;
-      deps = buildDepsWith reCC system;
+      deps = buildDepsWith cc system;
     };
     buildInputs = rethinkdbBuildInputs ++ [ cc ];
     buildCommand = ''
