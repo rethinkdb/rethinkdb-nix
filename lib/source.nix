@@ -7,8 +7,10 @@ rec {
   ];
   patchScripts = ''
     for script in ${scripts}; do
-      cp $script $script.orig
-      patchShebangs $script
+      if [[ -e $script ]]; then
+        cp $script $script.orig
+        patchShebangs $script
+      fi
     done
   '';
   unpatchScripts = dest: ''
@@ -126,7 +128,7 @@ rec {
       inherit fetchDependencies;
       cacert = pkgs.cacert;
     };
-    buildInputs = with pkgs; rethinkdbBuildInputs ++ [ git nix unzip ];
+    buildInputs = with pkgs; rethinkdbBuildInputs ++ [ git nix unzip reCC ];
   };
 
   sourceTgz = mkSimpleDerivation rec {
