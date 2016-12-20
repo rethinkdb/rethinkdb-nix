@@ -124,8 +124,9 @@ rec {
       __noChroot = true;
       src = <rethinkdb>;
       inherit fetchDependencies;
+      cacert = pkgs.cacert;
     };
-    buildInputs = with pkgs; rethinkdbBuildInputs ++ [ git cacert nix unzip ];
+    buildInputs = with pkgs; rethinkdbBuildInputs ++ [ git nix unzip ];
   };
 
   sourceTgz = mkSimpleDerivation rec {

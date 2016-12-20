@@ -70,12 +70,11 @@ rec {
     '';
   };
 
-  matrixBuilds =
-    forAttrs { inherit (pkgs)
+  matrixBuilds = listToAttrs (concatLists (
+    (flip mapAttrsToList) { inherit (pkgs)
         gcc48 gcc49 gcc5 gcc6
         clang_34 clang_35 clang_36 clang_37 clang_38;
-    } (ccName: cc:
-      listToAttrs (for [ "x86_64" "i686" ] (arch:
-        { name = arch;
-          value = debugBuildWith cc "${arch}-linux"; }))); 
+    } (ccName: cc: for [ "x86_64" "i686" ] (arch:
+        { name = "${ccName}-${arch}";
+          value = debugBuildWith cc "${arch}-linux"; }))));
 }

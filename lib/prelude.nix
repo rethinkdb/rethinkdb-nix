@@ -4,12 +4,16 @@ rec {
     listToAttrs match head tail toJSON toPath elemAt getAttr length
     trace genList isString fromJSON getEnv concatLists toString
     isAttrs hasAttr attrNames;
+
+  inherit (pkgs.lib) mapAttrs mapAttrsToList flip;
+
+  pkgs = import <nixpkgs> {};
+
   foldl = builtins.foldl'; #'
   tracing = x: trace x x;
   for = xs: f: map f xs;
-  pkgs = import <nixpkgs> {};
 
-  forAttrs = obj: f: pkgs.lib.mapAttrs f obj;
+  forAttrs = obj: f: mapAttrs f obj;
 
   replace = pattern: replacement: string:
     let group = match "(.*)(${pattern})(.*)" string;
