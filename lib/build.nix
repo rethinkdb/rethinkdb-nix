@@ -1,12 +1,9 @@
 with (import ./prelude.nix);
-with { inherit (import ./source.nix) sourcePrep fetchList fetchDependencies fetchInfos; };
+with { inherit (import ./source.nix) sourcePrep fetchList fetchDependencies fetchInfos alwaysFetch; };
 rec {
   rethinkdbBuildInputs = with pkgs; [
      protobuf protobuf.lib
      python27Full
-     nodejs
-     nodePackages.coffee-script
-     nodePackages.browserify
      zlib zlib.dev
      openssl.dev openssl.out
      boost.dev
@@ -17,7 +14,7 @@ rec {
   buildDepsWith = cc: system: mkSimpleDerivation (rec {
     name = "rethinkdb-deps-${cc.name}-${system}";
     inherit system;
-    buildInputs = rethinkdbBuildInputs ++ [ cc ];
+    buildInputs = rethinkdbBuildInputs ++ [ cc pkgs.nodejs ];
     buildCommand = ''
       cp -r $rethinkdb/* .
       chmod -R u+w .
@@ -27,7 +24,7 @@ rec {
         chmod -R u+w .
       done
       patchShebangs . > /dev/null
-      ./configure --fetch jemalloc
+      ./configure ${alwaysFetch}
       ${make} fetch
       patchShebangs external > /dev/null
       ${make} support

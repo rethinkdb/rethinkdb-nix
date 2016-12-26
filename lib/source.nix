@@ -45,6 +45,8 @@ rec {
     name = dep;
   };
 
+  alwaysFetch = "--fetch jemalloc --fetch coffee-script --fetch browserify";
+    
   mkFetch = fetch_list: let
     depInfos = map (dep: depInfo dep) fetchList;
   in mkSimpleDerivation (rec {
@@ -78,12 +80,12 @@ rec {
           buildCommand = ''
             cp -r $rethinkdb/* .
             chmod -R u+w .
-            ./configure --fetch jemalloc --fetch ${dep}
+            ./configure --fetch ${dep} ${alwaysFetch}
             make fetch-${dep}
             mkdir -p $out/external
             cp -r external/${dep}_* $out/external/
           '';
-          buildInputs = rethinkdbBuildInputs ++ [ reCC ];
+          buildInputs = rethinkdbBuildInputs ++ [ reCC pkgs.nodejs ];
           env = {
             __noChroot = true;
             rethinkdb = unsafeDiscardStringContext (toString <rethinkdb>);
@@ -92,7 +94,7 @@ rec {
       ) depInfos));
   });
 
-  fetchList = ["v8" "jemalloc" "admin-deps" ];
+  fetchList = [ "v8" "jemalloc" "admin-deps" "browserify" "coffee-script"];
   fetchInfos = map (dep: depInfo dep) fetchList;
 
   fetchDependencies = mkFetch fetchList;
@@ -101,6 +103,7 @@ rec {
   sourcePrep = mkSimpleDerivation rec {
     name = "rethinkdb-${env.version}";
     buildCommand = ''
+      export HOME=$TEMP # needed by gulp dependency v8-flags
 
       # TODO: https://github.com/NixOS/nixpkgs/issues/13744
       export SSL_CERT_FILE=$cacert/etc/ssl/certs/ca-bundle.crt
@@ -117,7 +120,7 @@ rec {
       echo "${env.version}" > VERSION.OVERRIDE
       cp -r --no-preserve=all $fetchDependencies/* .
       ${patchScripts}
-      ./configure --fetch jemalloc
+      ./configure ${alwaysFetch}
       ${make} dist-dir DIST_DIR=$out
       ${unpatchScripts "$out"}
     '';
@@ -128,7 +131,7 @@ rec {
       inherit fetchDependencies;
       cacert = pkgs.cacert;
     };
-    buildInputs = with pkgs; rethinkdbBuildInputs ++ [ git nix unzip reCC ];
+    buildInputs = with pkgs; rethinkdbBuildInputs ++ [ git nix unzip reCC nodejs ];
   };
 
   sourceTgz = mkSimpleDerivation rec {
