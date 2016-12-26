@@ -1,4 +1,4 @@
-{ inherit (import <rethinkdb-nix/all.nix>) fetchDependencies sourcePrep sourceTgz unitTests checkStyle; }
+{ inherit (import <rethinkdb-nix/all.nix>) fetchDependencies sourcePrep unitTests checkStyle; }
 
 
 
