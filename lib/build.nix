@@ -11,12 +11,14 @@ rec {
    ];
 
   buildDeps = buildDepsWith reCC builtins.currentSystem;
-  buildDepsWith = cc: system: mkSimpleDerivation (rec {
+  buildDepsWith = cc: system: let
+    rethinkdb = unsafeDiscardStringContext (toString <rethinkdb>);
+  in mkSimpleDerivation (rec {
     name = "rethinkdb-deps-${cc.name}-${system}";
     inherit system;
     buildInputs = rethinkdbBuildInputs ++ [ cc pkgs.nodejs ];
     buildCommand = ''
-      cp -r $rethinkdb/* .
+      cp -r ${rethinkdb}/* .
       chmod -R u+w .
       # sed -i "s/GYPFLAGS=/GYPFLAGS='-Dstandalone_static_library=1 '/" mk/support/pkg/v8.sh
       for x in $deps; do
@@ -35,7 +37,6 @@ rec {
       cp -r build/external $out/build/
     '';
     env = {
-      rethinkdb = unsafeDiscardStringContext (toString <rethinkdb>);
       deps = map (info: info.varName) fetchInfos;
       fattenArchives = ./fattenArchives.sh;
 
