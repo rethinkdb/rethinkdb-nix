@@ -12,7 +12,7 @@ rec {
 
   buildDeps = buildDepsWith reCC builtins.currentSystem;
   buildDepsWith = cc: system: let
-    rethinkdb = unsafeDiscardStringContext (toString <rethinkdb>);
+    rethinkdb = unsafeDiscardStringContext (toString <rethinkdb>); # TODO remove dependency on specific version
   in mkSimpleDerivation (rec {
     name = "rethinkdb-deps-${cc.name}-${system}";
     inherit system;

@@ -94,11 +94,10 @@ rec {
       ) depInfos));
   });
 
-  fetchList = [ "v8" "jemalloc" "admin-deps" "browserify" "coffee-script"];
+  fetchList = [ "v8" "jemalloc" "admin-deps" "browserify" "coffee-script" "bluebird" ];
   fetchInfos = map (dep: depInfo dep) fetchList;
 
   fetchDependencies = mkFetch fetchList;
-
 
   sourcePrep = mkSimpleDerivation rec {
     name = "rethinkdb-${env.version}";
