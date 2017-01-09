@@ -29,7 +29,7 @@ rec {
     in if group == null then [string]
     else [(head group)] ++ split (elemAt group 1);
 
-  make = "make -j $NIX_BUILD_CORES";
+  make = "make -j $NIX_BUILD_CORES -t $NIX_BUILD_CORES";
 
   mkStdBuilder = script: toFile "builder.sh" ("source $stdenv/setup\n" + script);
 

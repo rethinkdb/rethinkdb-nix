@@ -92,7 +92,7 @@ rec {
         ip link set dev lo up
         ./resunder.py start
         trap "./resunder.py stop" EXIT
-        test/rql_test/test-runner -j 2 ${args}
+        test/rql_test/test-runner -j 1 ${args}
       '';
     };
     buildCommand = ''
