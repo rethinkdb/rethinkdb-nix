@@ -1,6 +1,6 @@
-with import ./prelude.nix;
-with { inherit (import ./source.nix) sourcePrep alwaysFetch fetchDependencies; };
-with { inherit (import ./build.nix) debugBuild rethinkdbBuildInputs; };
+{ lib, sourcePrep, alwaysFetch, fetchDependencies, debugBuild, rethinkdbBuildInputs, rawSource }:
+with lib;
+
 rec {
 
   # TODO: add job to run known failures
@@ -60,7 +60,7 @@ rec {
   checkStyle = mkSimpleDerivation {
     name = "check-style";
     buildInputs = with pkgs; [ python ];
-    env.rethinkdb = <rethinkdb>;
+    env.rethinkdb = rawSource;
     buildCommand = ''
       sed 's|^DIR=.*|DIR=$rethinkdb/scripts|; s|"$DIR"/cpplint|python "$DIR"/cpplint|' \
         $rethinkdb/scripts/check_style.sh > check_style.sh

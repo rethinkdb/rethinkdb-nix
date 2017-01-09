@@ -1,5 +1,6 @@
-with import ./prelude.nix;
-with { inherit (import ./source.nix) sourcePrep mkFetch; };
+{ lib, sourcePrep, mkFetch }:
+with lib;
+
 rec {
   debBuildDeps = [
     "build-essential" "protobuf-compiler" "python"

@@ -1,6 +1,18 @@
-with import ./prelude.nix;
-with { inherit (import ./build.nix) rethinkdbBuildInputs; };
+{ lib, rethinkdb }:
+with lib;
+
 rec {
+  rawSource = rethinkdb;
+
+  rethinkdbBuildInputs = with pkgs; [
+     protobuf protobuf.lib
+     python27Full
+     zlib zlib.dev
+     openssl.dev openssl.out
+     boost.dev
+     curl curl.out curl.dev
+   ];
+
   scripts = concatStringsSep " " [
     "configure" "drivers/convert_protofile" "scripts/gen-version.sh"
     "mk/support/pkg/pkg.sh" "test/run" "external/v8_*/build/gyp/gyp"
@@ -21,7 +33,7 @@ rec {
 
   versionFile = mkSimpleDerivation {
     name = "rethinkdb-version";
-    env.src = <rethinkdb>;
+    env.src = rethinkdb;
     buildInputs = [ pkgs.git ];
     buildCommand = ''
       cd $src
@@ -30,7 +42,7 @@ rec {
   };
 
   depInfo = dep: let
-    source = readFile (toPath "${<rethinkdb>}/mk/support/pkg/${dep}.sh");
+    source = readFile (toPath "${rawSource}/mk/support/pkg/${dep}.sh");
     find = var: let go = source: val:
       let group = match "(.*?)\n *${var}=\"?([^\"\n]*)\"?\n.*" source;
       in if group == null then val else go (head group) (elemAt group 1);
@@ -54,7 +66,7 @@ rec {
     buildCommand = "set -x\n mkdir $out\n" +
       concatStringsSep "\n"
         (map (info: "cp -r --no-preserve=all ${"$"}${info.varName}/* $out/") depInfos);
-    buildInputs = [ <rethinkdb> ];
+    buildInputs = [ rawSource ];
     env = listToAttrs (concatLists (map (info: let
         dep = info.name;
         bothNames = val: [ { name = dep; value = val; } { name = info.varName; value = val; } ];
@@ -88,7 +100,7 @@ rec {
           buildInputs = rethinkdbBuildInputs ++ [ reCC pkgs.nodejs ];
           env = {
             __noChroot = true;
-            rethinkdb = unsafeDiscardStringContext (toString <rethinkdb>);
+            rethinkdb = unsafeDiscardStringContext (toString rawSource);
           }; 
         })
       ) depInfos));
@@ -126,7 +138,7 @@ rec {
     env = {
       version = unsafeDiscardStringContext (readFile versionFile);
       __noChroot = true;
-      src = <rethinkdb>;
+      src = rawSource;
       inherit fetchDependencies;
       cacert = pkgs.cacert;
     };

@@ -1,8 +1,17 @@
-with { inherit (import lib/package.nix) debs rpms; };
-with { inherit (import lib/build.nix) matrixBuilds; };
-with { inherit (import lib/test.nix) reqlTests; };
-debs // rpms // matrixBuilds // reqlTests // {
-  inherit (import lib/source.nix) sourcePrep fetchDependencies sourceTgz;
-  inherit (import lib/test.nix) unitTests checkStyle unitTestsBroken integrationTests;
-  inherit (import lib/build.nix) buildDeps debugBuild;
+let lib = import lib/prelude.nix {}; in
+with lib;
+
+let
+  inputs.rethinkdb = <rethinkdb>;
+
+  source = loadModule lib/source.nix inputs;
+  build = loadModule lib/build.nix (inputs // source);
+  package = loadModule lib/package.nix source;
+  test = loadModule lib/test.nix (inputs // source // build);
+in
+
+package.debs // package.rpms // build.matrixBuilds // test.reqlTests // {
+  inherit (source) sourcePrep fetchDependencies sourceTgz;
+  inherit (test) unitTests checkStyle unitTestsBroken integrationTests;
+  inherit (build) buildDeps debugBuild;
 }

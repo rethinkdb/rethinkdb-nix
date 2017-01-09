@@ -1,13 +1,18 @@
-rec {
+{ pkgs ? import <nixpkgs> {} }:
+
+let lib = rec {
   inherit (builtins)
     toFile readFile concatStringsSep unsafeDiscardStringContext
     listToAttrs match head tail toJSON toPath elemAt getAttr length
     trace genList isString fromJSON getEnv concatLists toString
-    isAttrs hasAttr attrNames;
+    isAttrs hasAttr attrNames intersectAttrs functionArgs;
 
-  inherit (pkgs.lib) mapAttrs mapAttrsToList flip;
+  inherit pkgs;
+  inherit (pkgs.lib) mapAttrs mapAttrsToList flip callPackageWith;
 
-  pkgs = import <nixpkgs> {};
+  loadModule = path: attrs:
+    let fn = import path; in
+    fn ({ inherit lib; } // intersectAttrs (functionArgs fn) attrs);
 
   foldl = builtins.foldl'; #'
   tracing = x: trace x x;
@@ -100,4 +105,5 @@ rec {
       findutils = pkgs.findutils;
     };
   };
-}
+};
+in lib

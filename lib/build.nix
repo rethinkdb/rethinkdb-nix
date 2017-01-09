@@ -1,18 +1,10 @@
-with (import ./prelude.nix);
-with { inherit (import ./source.nix) sourcePrep fetchList fetchDependencies fetchInfos alwaysFetch; };
-rec {
-  rethinkdbBuildInputs = with pkgs; [
-     protobuf protobuf.lib
-     python27Full
-     zlib zlib.dev
-     openssl.dev openssl.out
-     boost.dev
-     curl curl.out curl.dev
-   ];
+{ lib, sourcePrep, fetchList, fetchDependencies, fetchInfos, alwaysFetch, rethinkdbBuildInputs, rawSource }:
+with lib;
 
+rec {
   buildDeps = buildDepsWith reCC builtins.currentSystem;
   buildDepsWith = cc: system: let
-    rethinkdb = unsafeDiscardStringContext (toString <rethinkdb>); # TODO remove dependency on specific version
+    rethinkdb = unsafeDiscardStringContext (toString rawSource); # TODO remove dependency on specific version
   in mkSimpleDerivation (rec {
     name = "rethinkdb-deps-${cc.name}-${system}";
     inherit system;
