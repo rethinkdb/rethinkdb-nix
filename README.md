@@ -44,8 +44,7 @@ git clone https://github.com/atnnn/rethinkdb-nix
 Syntax-check the scripts:
 
 ```
-cd rethinkdb-nix
-nix-instantiate -I .. all.nix
+make check
 ```
 
 Build a RethinkDB source tarball:
