@@ -1,3 +1,4 @@
+{ debug ? false }:
 let lib = import lib/prelude.nix {}; in
 with lib;
 
@@ -14,4 +15,6 @@ package.debs // package.rpms // build.matrixBuilds // test.reqlTests // {
   inherit (source) sourcePrep fetchDependencies sourceTgz;
   inherit (test) unitTests checkStyle unitTestsBroken integrationTests;
   inherit (build) buildDeps debugBuild;
-}
+} // (if !debug then {} else {
+  inherit source build package test;
+})
