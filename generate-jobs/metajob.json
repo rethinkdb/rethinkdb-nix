@@ -10,7 +10,7 @@
     "emailoverride": "",
     "keepnr": 3,
     "inputs": {
-	"nixpkgs": { "type": "path", "value": "/nix/store/i06cff88anv9p52li3l6cdvd0w073n61-nixos-16.09.1270.8bfa4ce/nixos", "emailresponsible": false },
+	"nixpkgs": { "type": "git", "value": "https://github.com/atnnn/nixpkgs", "emailresponsible": false },
 	"rethinkdb-nix": { "type": "git", "value": "https://github.com/atnnn/rethinkdb-nix", "emailresponsible": false },
 	"pull-requests": { "type": "path", "value": "https://api.github.com/repos/rethinkdb/rethinkdb/pulls", "emailresponsible": false }
     }
