@@ -52,7 +52,7 @@ rec {
       inherit diskImage;
     });
 
-  # TODO: move missing distros upstream
+  # TODO: remove when accepted upstream: https://github.com/NixOS/nixpkgs/pull/22009
   customDebDistros = with pkgs; with vmTools; with debDistros; debDistros // {
     ubuntu1610i386 = {
       name = "ubuntu-16.10-yakkety-i386";
@@ -60,11 +60,11 @@ rec {
       packagesLists = [
 	(fetchurl {
 	   url = mirror://ubuntu/dists/yakkety/main/binary-i386/Packages.xz;
-           sha256 = "13r75sp4slqy8w32y5dnr7pp7p3cfvavyr1g7gwnlkyrq4zx4ahy"; # TODO
+           sha256 = "13r75sp4slqy8w32y5dnr7pp7p3cfvavyr1g7gwnlkyrq4zx4ahy";
         })
         (fetchurl {
           url = mirror://ubuntu/dists/yakkety/universe/binary-i386/Packages.xz;
-          sha256 = "14fid1rqm3sc0wlygcvn0yx5aljf51c2jpd4x0zxij4019316hsh"; # TODO
+          sha256 = "14fid1rqm3sc0wlygcvn0yx5aljf51c2jpd4x0zxij4019316hsh";
         })
       ];
       urlPrefix = mirror://ubuntu;
@@ -85,6 +85,26 @@ rec {
       ];
       urlPrefix = mirror://ubuntu;
       packages = commonDebPackages ++ [ "diffutils" "libc-bin" ];
+    };
+    debian9x86_64 = {
+      name = "debian-stretch-amd64";
+      fullName = "Debian Stretch (amd64)";
+      packagesList = fetchurl {
+        url = mirror://debian/dists/stretch/main/binary-amd64/Packages.xz;
+ 	sha256 = "1ihfcrrjz2nwh5wxa8b90m24b5z7q5p1h2ydfg9f1b6pdk81f6ji";
+      };
+      urlPrefix = mirror://debian;
+      packages = commonDebianPackages;
+    };
+    debian9i386 = {
+      name = "debian-stretch-i386";
+      fullName = "Debian Stretch (i386)";
+      packagesList = fetchurl {
+        url = mirror://debian/dists/stretch/main/binary-i386/Packages.xz;
+ 	sha256 = "08gikw2pfm76fdl14b6sjx07dwp70ycgdj3zir296b7xrwiymima";
+      };
+      urlPrefix = mirror://debian;
+      packages = commonDebianPackages;
     };
   };
 
@@ -131,6 +151,12 @@ rec {
       { name = "saucy";
 	b64 = ubuntu1310x86_64;
 	b32 = ubuntu1310i386; }
+      { name = "jessie";
+	b64 = debian8x86_64;
+	b32 = debian8i386; }
+      { name = "stretch";
+	b64 = debian9x86_64;
+	b32 = debian9i386; }
     ] ({ name, b64, b32, extra ? [] }: let
       dsc = vmBuild {
         name = "rethinkdb-${sourcePrep.version}-${name}-src";
