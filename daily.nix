@@ -1,1 +1,1 @@
-import <rethinkdb-nix/all.nix>
+import ./all.nix {}
