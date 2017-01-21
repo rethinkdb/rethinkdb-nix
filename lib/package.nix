@@ -86,6 +86,18 @@ rec {
       urlPrefix = mirror://ubuntu;
       packages = commonDebPackages ++ [ "diffutils" "libc-bin" ];
     };
+    debian8i386 = debian8i386 // {
+      packagesList = fetchurl {
+        url = "mirror://debian/dists/jessie/main/binary-i386/Packages.xz";
+        sha256 = "1s1z7dp93lz8gxzfrvc7avczhv43r75mq8gdlmkjxay49n9wpjki";
+      };
+    };
+    debian8x86_64 = debian8x86_64 // {
+      packagesList = fetchurl {
+        url = "mirror://debian/dists/jessie/main/binary-amd64/Packages.xz";
+        sha256 = "1wqp9a44i65434ik04r536lk6vsv7wbhl3yh4qbww18zyfpbmkxl";
+      };
+    };
     debian9x86_64 = {
       name = "debian-stretch-amd64";
       fullName = "Debian Stretch (amd64)";
