@@ -112,7 +112,7 @@ rec {
       mkdir -p $out/nix-support
       sed 's|/var/log/resunder.log|resunder.log|' test/common/resunder.py > resunder.py
       chmod u+x resunder.py
-      unshare --net --map-root-user bash $runTests || touch $out/nix-support/failed
+      unshare --net --map-root-user bash $runTests
     ''; 
   };
 
