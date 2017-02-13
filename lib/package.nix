@@ -178,9 +178,6 @@ rec {
           cd rethinkdb
           ./configure
 
-          # TODO: upstream add -w to *.pb.cc build rule
-          ${if name == "yakkety" then "sed -i 's/^ALLOW_WARNINGS.*/ALLOW_WARNINGS = 1/' mk/defaults.mk" else ""}
-
           make -j 6 build-deb-src UBUNTU_RELEASE=${name} SIGN_PACKAGE=0
           cp build/packages/*.{dsc,build,changes,tar.?z} $out
           mkdir $out/nix-support
