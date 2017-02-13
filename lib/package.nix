@@ -144,7 +144,8 @@ rec {
     listToAttrs (concatLists (for [
       { name = "yakkety";
         b64 = ubuntu1610x86_64;
-	b32 = ubuntu1610i386; }
+	b32 = ubuntu1610i386;
+	extra = [ "gcc-5" "g++-5" ]; }
       { name = "xenial";
         b64 = ubuntu1604x86_64;
 	b32 = ubuntu1604i386; }
