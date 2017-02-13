@@ -1,6 +1,10 @@
 { pkgs ? import <nixpkgs> {},
   pullRequests ? <pull-requests> }:
 let
+  schedulingLow = 10;
+  schedulingDefault = 100;
+  schedulingHigh = 1000;
+
   jobset = { branch, job ? "test-commit", attrs ? {}, repo ? "rethinkdb/rethinkdb", checkinterval ? 0 }: {
     enabled = 1;
     hidden = false;
@@ -8,7 +12,7 @@ let
     nixexprinput = "rethinkdb-nix";
     nixexprpath = "${job}.nix";
     checkinterval = checkinterval;
-    schedulingshares = 100;
+    schedulingshares = schedulingDefault;
     enableemail = true;
     emailoverride = "";
     keepnr = 10;
@@ -26,6 +30,11 @@ let
   metajob = builtins.fromJSON (builtins.readFile <rethinkdb-nix/generate-jobs/metajob.json>);
   mainBranches = ["next" "v2.3.x"];
 
+  releases = [
+    { name = "v2.3.6"; branch = "v2.3.x"; enabled = true; }
+  # { name = "v2.4.0"; branch = "v2.4.x"; }
+  ];
+
   mainSpecs = builtins.foldl' (a: b: a // b) {} (map (branch: {
     "${branch}" = jobset {
       inherit branch;
@@ -37,11 +46,25 @@ let
       checkinterval = 86400; # 1 day
       attrs = {
         description = "Daily build of ${branch}";
-      	schedulingshares = 1;
+      	schedulingshares = schedulingLow;
       	keepnr = 30;
       };
     };
   } ) mainBranches);
+
+  releaseSpecs = builtins.foldl' (a: b: a // b) {} (map (info: {
+      "release-${info.name}" = jobset {
+        branch = info.branch;
+	checkinterval = 600;
+	job = "release";
+	attrs = {
+          description = "Release ${info.name}";
+	  keepnr = 100;
+	  schedulingshares = schedulingHigh;
+	  enabled = if info.enabled then 1 else 0;
+        };
+      };
+    } ) releases);
 
   prSpecs = builtins.listToAttrs (map (pr: {
     name = "${toString pr.number}-${pr.user.login}";
@@ -58,7 +81,7 @@ let
     };
   }) (builtins.fromJSON (builtins.unsafeDiscardStringContext (builtins.readFile pullRequests))));
 
-  specs = mainSpecs // prSpecs // { ".jobsets" = metajob; };
+  specs = mainSpecs // prSpecs // releaseSpecs // { ".jobsets" = metajob; };
 
 in {
   jobsets = pkgs.writeText "jobsets.json" (builtins.toJSON specs);
