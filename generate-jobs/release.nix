@@ -32,7 +32,7 @@ let
 
   releases = [
     { name = "v2.3.6"; branch = "v2.3.x"; enabled = true; }
-  # { name = "v2.4.0"; branch = "v2.4.x"; }
+    { name = "v2.4.0"; branch = "v2.4.x"; enabled = true; }
   ];
 
   mainSpecs = builtins.foldl' (a: b: a // b) {} (map (branch: {
