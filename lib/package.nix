@@ -254,7 +254,7 @@ rec {
           done
         '';
         memSize = 8192;
-        diskImage = image { extraPackages = getAttr name rpmBuildDeps; };
+        diskImage = image { extraPackages = getAttr name rpmBuildDeps; size = 8192; };
       };
   in { name = "${name}-${arch}"; value = rpm; }));
 
