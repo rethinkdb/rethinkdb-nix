@@ -60,7 +60,7 @@ rec {
   alwaysFetch = "--fetch jemalloc --fetch coffee-script --fetch browserify";
     
   mkFetch = fetch_list: let
-    depInfos = map (dep: depInfo dep) fetchList;
+    depInfos = map (dep: depInfo dep) fetch_list;
   in mkSimpleDerivation (rec {
     name = "rethinkdb-dependencies-src";
     buildCommand = "set -x\n mkdir $out\n" +

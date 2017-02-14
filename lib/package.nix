@@ -234,7 +234,7 @@ rec {
           extraFetched = mkFetch [ "openssl" "curl" "libidn" "zlib" ];
 	};
 	build = ''
-          PATH=$fpm/bin:/usr/bin:/bin:/usr/sbin:/sbin
+          PATH=$fpm/bin:/usr/bin:/bin:/usr/sbin:/sbin 
 	  cp -r $src /build
           cp -r $extraFetched/* /build/
           cd /build
