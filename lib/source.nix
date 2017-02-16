@@ -152,7 +152,7 @@ rec {
     buildCommand = ''
       mkdir $out
       cd $src
-      tar --transform 's|^.|rethinkdb-${env.src.version}|' -zcf $out/rethinkdb-${env.src.version}.tgz ./
+      tar --transform 's|^.|rethinkdb-${env.src.version}|' --owner rethinkdb --group rethinkdb --mode ug+w -zcf $out/rethinkdb-${env.src.version}.tgz ./
       mkdir $out/nix-support
       echo file source-dist $out/rethinkdb-${env.src.version}.tgz > $out/nix-support/hydra-build-products
     '';
