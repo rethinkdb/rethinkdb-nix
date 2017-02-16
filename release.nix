@@ -1,6 +1,13 @@
 { inherit (import ./all.nix {})
-  fetchDependencies sourcePrep unitTests checkStyle
+
+  # source
+  fetchDependencies sourcePrep sourceTgz
+
+  # tests
+  unitTests checkStyle
   testPython35 testRuby22 otherTests integrationTests
+
+  # packages
   jessie-amd64 jessie-i386 jessie-src
   saucy-amd64 saucy-i386 saucy-src
   stretch-amd64 stretch-i386 stretch-src
