@@ -83,7 +83,7 @@ rec {
             mkdir -p $out/external/.cache
             # ln -s $src $out/external/.cache/''${src#*-}
             src="${info.url}"
-            curl "$src" > $out/external/.cache/''${src##*/}
+            curl -L "$src" > $out/external/.cache/''${src##*/}
             # TODO: check sha1
           '';
           env.__noChroot = true;
