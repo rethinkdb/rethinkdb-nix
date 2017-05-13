@@ -17,6 +17,7 @@
   wily-amd64 wily-i386 wily-src
   xenial-amd64 xenial-i386 xenial-src
   yakkety-amd64 yakkety-i386 yakkety-src
+  zesty-amd64 zesty-i386 zesty-src
   centos6-x86_64 centos7-x86_64
   ;
 }
