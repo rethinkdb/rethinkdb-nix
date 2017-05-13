@@ -89,7 +89,11 @@ rec {
       python = python.withPackages (p: with p; [ tornado twisted pyopenssl ] ++ (if hasGevent then [ gevent ] else []));
       inherit ruby javascript;
       runTests = toFile "run-reql-tests.sh" ''
+        set -xeu
         ip link set dev lo up
+        echo "127.0.0.1 httpbin.org" > hosts
+        mount --bind hosts /etc/hosts
+        mount --bind /var/empty /var/run/nscd || true
         ./resunder.py start
         trap "./resunder.py stop" EXIT
         test/rql_test/test-runner -j 1 ${args}
@@ -112,7 +116,7 @@ rec {
       mkdir -p $out/nix-support
       sed 's|/var/log/resunder.log|resunder.log|' test/common/resunder.py > resunder.py
       chmod u+x resunder.py
-      unshare --net --map-root-user bash $runTests
+      unshare --net --map-root-user --mount bash $runTests
     ''; 
   };
 
