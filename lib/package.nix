@@ -86,6 +86,38 @@ rec {
       urlPrefix = mirror://ubuntu;
       packages = commonDebPackages ++ [ "diffutils" "libc-bin" ];
     };
+    ubuntu1704i386 = {
+          name = "ubuntu-17.04-zesty-i386";
+	  fullName = "Ubuntu 17.04 Zesty (i386)";
+	  packagesLists =
+	  [ (fetchurl {
+	      url = mirror://ubuntu/dists/zesty/main/binary-i386/Packages.xz;
+	      sha256 = "da811f582779a969f738f2366c17e075cf0da3c4f2a4ed1926093a2355fd72ba";
+	  })
+	    (fetchurl {
+		url = mirror://ubuntu/dists/zesty/universe/binary-i386/Packages.xz;
+		sha256 = "5162b0a87173cd5dea7ce2273788befe36f38089d44a2379ed9dd92f76c6b2aa";
+	    })
+	  ];
+	  urlPrefix = mirror://ubuntu;
+	  packages = commonDebPackages ++ [ "diffutils" "libc-bin" ];
+    };
+    ubuntu1704x86_64 = {
+        name = "ubuntu-17.04-zesty-amd64";
+	fullName = "Ubuntu 17.04 Zesty (amd64)";
+	packagesList =
+	[ (fetchurl {
+	    url = mirror://ubuntu/dists/zesty/main/binary-amd64/Packages.xz;
+	    sha256 = "356c4cfab0d7f77b75c473cd78b22ee7288f63b24c9739049924dc081dd2e3d1";
+	})
+	  (fetchurl {
+	      url = mirror://ubuntu/dists/zesty/universe/binary-amd64/Packages.xz;
+	      sha256 = "a72660f8feffd6978e3b9328c6259b5387ac0b4f33d1029e4a17091ceb5057e6";
+	  })
+	];
+	urlPrefix = mirror://ubuntu;
+	packages = commonDebPackages ++ [ "diffutils" "libc-bin" ];
+    };
     debian8i386 = debian8i386 // {
       packagesList = fetchurl {
         url = "mirror://debian/dists/jessie/main/binary-i386/Packages.xz";
@@ -142,6 +174,10 @@ rec {
 
   debs = with diskImageFuns;
     listToAttrs (concatLists (for [
+      { name = "zesty";
+        b64 = ubuntu1704x86_64;
+	b32 = ubuntu1704i386;
+	extra = [ "gcc-5" "g++-5" ]; }
       { name = "yakkety";
         b64 = ubuntu1610x86_64;
 	b32 = ubuntu1610i386;
