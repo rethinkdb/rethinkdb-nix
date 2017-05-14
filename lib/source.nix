@@ -48,10 +48,12 @@ rec {
       in if group == null then val else go (head group) (elemAt group 1);
     in go source null;
     rawUrl = find "src_url";
+    substVersion = version: groups: replaceStrings [(elemAt groups 0)] [(elemAt groups 1)] version;
   in rec {
     version = replace "/-patched.*/" "" (find "version");
     url = if rawUrl == null then null
-      else replace "\\$\\{?version([^}]*})?" version rawUrl;
+      else replace "\\$\\{?version([^}]*})?" version
+           (replace "\\$\\{version//([^/]+)/([^}]*)}" (substVersion version) rawUrl);
     sha1 = find "src_url_sha1";
     varName = replace "-" "_" dep;
     name = dep;
@@ -80,8 +82,8 @@ rec {
           # };
           buildInputs = [ pkgs.curl pkgs.coreutils ];
           buildCommand = ''
-            mkdir -p $out/external/.cache
-            # ln -s $src $out/external/.cache/''${src#*-}
+            mkdir -p $out/external/.cache 
+            # TODO: ln -s $src $out/external/.cache/''${src#*-}
             src="${info.url}"
             curl -L "$src" > $out/external/.cache/''${src##*/}
             # TODO: check sha1

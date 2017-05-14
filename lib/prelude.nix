@@ -5,7 +5,7 @@ let lib = rec {
     toFile readFile concatStringsSep unsafeDiscardStringContext
     listToAttrs match head tail toJSON toPath elemAt getAttr length
     trace genList isString fromJSON getEnv concatLists toString
-    isAttrs hasAttr attrNames intersectAttrs functionArgs;
+    isAttrs hasAttr attrNames intersectAttrs functionArgs replaceStrings;
 
   inherit pkgs;
   inherit (pkgs.lib) mapAttrs mapAttrsToList flip callPackageWith;

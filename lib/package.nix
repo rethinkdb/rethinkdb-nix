@@ -28,11 +28,11 @@ rec {
   };
 
   rpmBuildDeps = rec {
-    common = [ "boost-static" "tar" "which" "m4" ];
+    common = [ "tar" "which" "m4" ];
     centos6 = common ++ [ "devtoolset-2" ];
     centos7 = common ++ [
       # centos
-      "git" "gcc-c++" "ncurses-devel" "make" "ncurses-static" "zlib-devel" "zlib-static"
+      "git" "gcc-c++" "ncurses-devel" "make" "ncurses-static" "zlib-devel" "zlib-static" "boost-static"
       # epel
       "protobuf-devel" "protobuf-static" "jemalloc-devel"
     ];
@@ -256,29 +256,32 @@ rec {
         image = centos71x86_64; }
       { name = "centos6";
 	arch = "x86_64";
-        image = centos65x86_64; }
+        image = centos65x86_64;
+	extraFetch = ["protobuf" "jemalloc" "boost"]; }
       # TODO: build fails with "package bzip2 doesn't exist"
       # { name = "centos6";
       # 	arch = "i386";
       #   image = centos65i386; }
-    ] ({ name, arch, image, extra ? [] }: let
+    ] ({ name, arch, image, extraFetch ? [] }: let
+      fetchList = [ "openssl" "curl" "libidn" "zlib" ] ++ extraFetch;
       rpm = vmBuild {
         name = "rethinkdb-${sourcePrep.version}-${name}-${arch}";
         attrs = {
 	  src = sourcePrep;
 	  fpm = pkgs.fpm;
-          extraFetched = mkFetch [ "openssl" "curl" "libidn" "zlib" ];
+          fetched = mkFetch fetchList;
 	};
 	build = ''
-          PATH=$fpm/bin:/usr/bin:/bin:/usr/sbin:/sbin 
+          PATH=$fpm/bin:/usr/bin:/bin:/usr/sbin:/sbin
+          ${if name == "centos6" then "source /opt/rh/devtoolset-2/enable" else ""}
 	  cp -r $src /build
-          cp -r $extraFetched/* /build/
+          cp -r $fetched/* /build/
           cd /build
 
           # TODO: conditionally `--fetch all' upstream
           # TODO: centos is missing krb5-static: https://bugzilla.redhat.com/show_bug.cgi?id=838782
           ./configure --static all --prefix=/usr --sysconfdir=/etc --localstatedir=/var \
-              --fetch openssl --fetch crypto --fetch curl --fetch zlib --fetch libidn
+	      ${concatStringsSep " " (map (d: "--fetch ${d}") fetchList)}
 	  export NOCONFIGURE=1
 
           scripts/build-rpm.sh
