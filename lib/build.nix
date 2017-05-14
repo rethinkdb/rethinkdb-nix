@@ -1,4 +1,4 @@
-{ lib, sourcePrep, fetchList, fetchDependencies, fetchInfos, alwaysFetch, rethinkdbBuildInputs, rawSource }:
+{ lib, sourcePrep, fetchList, fetchDependencies, fetchInfos, alwaysFetch, rethinkdbBuildInputsCC, rethinkdbBuildInputs, rawSource }:
 with lib;
 
 rec {
@@ -8,7 +8,7 @@ rec {
   in mkSimpleDerivation (rec {
     name = "rethinkdb-deps-${cc.name}-${system}";
     inherit system;
-    buildInputs = rethinkdbBuildInputs ++ [ cc pkgs.nodejs ];
+    buildInputs = rethinkdbBuildInputsCC cc ++ [ cc pkgs.nodejs ];
     buildCommand = ''
       cp -r ${rethinkdb}/* .
       chmod -R u+w .
@@ -46,7 +46,7 @@ rec {
       src = sourcePrep;
       deps = buildDepsWith cc system;
     };
-    buildInputs = rethinkdbBuildInputs ++ [ cc ];
+    buildInputs = rethinkdbBuildInputsCC cc ++ [ cc ];
     buildCommand = ''
       cp -r $src/* .
       chmod -R u+w .
@@ -63,7 +63,7 @@ rec {
   matrixBuilds = listToAttrs (concatLists (
     (flip mapAttrsToList) { inherit (pkgs)
         gcc48 gcc49 gcc5 gcc6
-        clang_34 clang_35 clang_36 clang_37 clang_38;
+        clang_34 clang_35 clang_36 clang_37 clang_38 clang_39;
     } (ccName: cc: for [ "x86_64" "i686" ] (arch:
         { name = "${ccName}-${arch}";
           value = debugBuildWith cc "${arch}-linux"; }))));

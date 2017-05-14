@@ -4,14 +4,16 @@ with lib;
 rec {
   rawSource = rethinkdb;
 
-  rethinkdbBuildInputs = with pkgs; [
-     protobuf protobuf.lib
-     python27Full
-     zlib zlib.dev
-     openssl.dev openssl.out
-     boost.dev
-     curl curl.out curl.dev
-   ];
+  rethinkdbBuildInputsCC = cc: with pkgs; let
+    protobuf' = protobuf.override { stdenv = overrideCC stdenv cc; }; in [ 
+       protobuf' protobuf'.lib
+       python27Full
+       zlib zlib.dev
+       openssl.dev openssl.out
+       boost.dev
+       curl curl.out curl.dev
+    ];
+  rethinkdbBuildInputs = rethinkdbBuildInputsCC pkgs.stdenv.cc;
 
   scripts = concatStringsSep " " [
     "configure" "drivers/convert_protofile" "scripts/gen-version.sh"
