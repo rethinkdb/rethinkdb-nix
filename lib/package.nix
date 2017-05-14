@@ -92,11 +92,11 @@ rec {
 	  packagesLists =
 	  [ (fetchurl {
 	      url = mirror://ubuntu/dists/zesty/main/binary-i386/Packages.xz;
-	      sha256 = "da811f582779a969f738f2366c17e075cf0da3c4f2a4ed1926093a2355fd72ba";
+ 	      sha256 = "1794y32k29p9w6cyg6nvyz7yyxbyd2az31zxxvg1pjn5n244vbhk";
 	  })
 	    (fetchurl {
 		url = mirror://ubuntu/dists/zesty/universe/binary-i386/Packages.xz;
-		sha256 = "5162b0a87173cd5dea7ce2273788befe36f38089d44a2379ed9dd92f76c6b2aa";
+		sha256 = "0lw1rrjfladxxarffmhkqigd126736iw6i4kxkdbxqp0sj5x6gw8";
 	    })
 	  ];
 	  urlPrefix = mirror://ubuntu;
@@ -108,11 +108,11 @@ rec {
 	packagesList =
 	[ (fetchurl {
 	    url = mirror://ubuntu/dists/zesty/main/binary-amd64/Packages.xz;
-	    sha256 = "356c4cfab0d7f77b75c473cd78b22ee7288f63b24c9739049924dc081dd2e3d1";
+	    sha256 = "1fs0v6w831hlizzcri6dd08dbbrq7nmhzbw0a699ypdyy72cglk6";
 	})
 	  (fetchurl {
 	      url = mirror://ubuntu/dists/zesty/universe/binary-amd64/Packages.xz;
-	      sha256 = "a72660f8feffd6978e3b9328c6259b5387ac0b4f33d1029e4a17091ceb5057e6";
+	      sha256 = "10rwysnwpz225xxjkl58maflqgykqi1rlrm0h0w5bis86jwp59ph";
 	  })
 	];
 	urlPrefix = mirror://ubuntu;
