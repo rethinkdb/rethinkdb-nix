@@ -38,7 +38,7 @@ Checkout RethinkDB and RethinkDB-Nix side-by-side:
 
 ```
 git clone https://github.com/rethinkdb/rethinkdb
-git clone https://github.com/atnnn/rethinkdb-nix
+git clone https://github.com/rethinkdb/rethinkdb-nix
 ```
 
 Syntax-check the scripts:

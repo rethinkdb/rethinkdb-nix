@@ -1,7 +1,7 @@
 {
     "enabled": 1,
     "hidden": true,
-    "description": "Meta-job v7",
+    "description": "Meta-job v8",
     "nixexprinput": "rethinkdb-nix",
     "nixexprpath": "generate-jobs/release.nix",
     "checkinterval": 600,
@@ -11,7 +11,7 @@
     "keepnr": 3,
     "inputs": {
 	"nixpkgs": { "type": "git", "value": "https://github.com/atnnn/nixpkgs", "emailresponsible": false },
-	"rethinkdb-nix": { "type": "git", "value": "https://github.com/atnnn/rethinkdb-nix", "emailresponsible": false },
+	"rethinkdb-nix": { "type": "git", "value": "https://github.com/rethinkdb/rethinkdb-nix", "emailresponsible": false },
 	"pull-requests": { "type": "path", "value": "https://api.github.com/repos/rethinkdb/rethinkdb/pulls", "emailresponsible": false }
     }
 }
