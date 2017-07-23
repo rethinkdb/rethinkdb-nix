@@ -6,13 +6,14 @@ rec {
   # TODO: add job to run known failures
   known_failures = [
     # known failures (TODO: fix upstream)
-    "unit.RDBBtree"
     "unit.UtilsTest"
-    "unit.RDBProtocol"
-    "unit.RDBBtree"
-    "unit.RDBInterrupt"
-    "unit.ClusteringRaft"
     "unit.TimerTest"
+    
+    # Heavy tests that may sometimes fail
+    # "unit.RDBProtocol"
+    # "unit.RDBBtree"
+    # "unit.RDBInterrupt"
+    # "unit.ClusteringRaft"
   ];
   skipTests = tests:
       concatStringsSep " " (map (t: "'!" + t + "'") tests);
@@ -70,7 +71,7 @@ rec {
 
   integrationTests = runTests {
     testName = "integration";
-    testsPattern = "all '!unit' '!cpplint'";
+    testsPattern = "all '!unit' '!cpplint' ${skipTests known_failures}";
     additionalInputs = [ reCC pkgs.procps ] ++ rethinkdbBuildInputs;
     setup = ''
       ./configure --allow-fetch
