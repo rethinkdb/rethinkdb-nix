@@ -54,7 +54,7 @@ let
   } ) mainBranches);
 
   releaseSpecs = builtins.foldl' (a: b: a // b) {} (map (info: {
-      "release-${info.name}-${info.type}" = jobset {
+      "release-${info.name}" = jobset {
         branch = info.branch;
 	checkinterval = 600;
 	job = "release";
