@@ -28,11 +28,12 @@ let
   } // attrs;
 
   metajob = builtins.fromJSON (builtins.readFile <rethinkdb-nix/generate-jobs/metajob.json>);
-  mainBranches = ["next" "v2.3.x"];
+  mainBranches = ["next" "v2.3.x" "v2.4.x"];
 
   releases = [
-    { name = "v2.3.6"; branch = "v2.3.x"; enabled = true; }
-    { name = "v2.4.0"; branch = "v2.4.x"; enabled = true; }
+    { name = "v2.3.7"; branch = "v2.3.x"; type = "RC"; enabled = true; }
+    { name = "v2.4.0"; branch = "v2.4.x"; type = "beta"; enabled = true; }
+    { name = "v2.5.0"; branch = "next"; type = "alpha"; enabled = true; }
   ];
 
   mainSpecs = builtins.foldl' (a: b: a // b) {} (map (branch: {
@@ -53,12 +54,12 @@ let
   } ) mainBranches);
 
   releaseSpecs = builtins.foldl' (a: b: a // b) {} (map (info: {
-      "release-${info.name}" = jobset {
+      "release-${info.name}-${info.type}" = jobset {
         branch = info.branch;
 	checkinterval = 600;
 	job = "release";
 	attrs = {
-          description = "Release ${info.name}";
+          description = "Release ${info.name} ${info.type}";
 	  keepnr = 100;
 	  schedulingshares = schedulingHigh;
 	  enabled = if info.enabled then 1 else 0;
