@@ -21,7 +21,7 @@ rec {
       ./configure ${alwaysFetch}
       ${make} fetch
       patchShebangs external > /dev/null
-      ${make} support
+      ${make} support VERBOSE=1
 
       bash $fattenArchives build/external/v8_*/lib/*.a
       
@@ -63,7 +63,7 @@ rec {
   matrixBuilds = listToAttrs (concatLists (
     (flip mapAttrsToList) { inherit (pkgs)
         gcc48 gcc49 gcc5 gcc6 gcc7
-        clang_34 clang_35 clang_36 clang_37 clang_38 clang_39 clang_4;
+        clang_34 clang_35 clang_37 clang_38 clang_39 clang_4 clang_5;
     } (ccName: cc: for [ "x86_64" "i686" ] (arch:
         { name = "${ccName}-${arch}";
           value = debugBuildWith cc "${arch}-linux"; }))));

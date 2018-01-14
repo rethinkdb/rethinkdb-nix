@@ -6,12 +6,13 @@ rec {
 
   rethinkdbBuildInputsCC = cc: with pkgs; let
     protobuf' = protobuf.override { stdenv = overrideCC stdenv cc; }; in [ 
-       protobuf' protobuf'.lib
+       protobuf' # protobuf'.lib
        python27Full
        zlib zlib.dev
        openssl.dev openssl.out
        boost.dev
        curl curl.out curl.dev
+       binutils binutils-unwrapped
     ];
   rethinkdbBuildInputs = rethinkdbBuildInputsCC pkgs.stdenv.cc;
 

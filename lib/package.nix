@@ -118,6 +118,38 @@ rec {
 	urlPrefix = mirror://ubuntu;
 	packages = commonDebPackages ++ [ "diffutils" "libc-bin" ];
     };
+    ubuntu1710i386 = {
+          name = "ubuntu-17.10-artful-i386";
+	  fullName = "Ubuntu 17.10 Artful (i386)";
+	  packagesLists =
+	  [ (fetchurl {
+	      url = mirror://ubuntu/dists/artful/main/binary-i386/Packages.xz;
+ 	      sha256 = "1794y32k29p9w6cyg6nvyz7yyxbyd2az31zxxvg1pjn5n244vbhk";
+	  })
+	    (fetchurl {
+		url = mirror://ubuntu/dists/artful/universe/binary-i386/Packages.xz;
+		sha256 = "0lw1rrjfladxxarffmhkqigd126736iw6i4kxkdbxqp0sj5x6gw8";
+	    })
+	  ];
+	  urlPrefix = mirror://ubuntu;
+	  packages = commonDebPackages ++ [ "diffutils" "libc-bin" ];
+    };
+    ubuntu1710x86_64 = {
+        name = "ubuntu-17.10-artful-amd64";
+	fullName = "Ubuntu 17.10 Artful (amd64)";
+	packagesList =
+	[ (fetchurl {
+	    url = mirror://ubuntu/dists/artful/main/binary-amd64/Packages.xz;
+	    sha256 = "1fs0v6w831hlizzcri6dd08dbbrq7nmhzbw0a699ypdyy72cglk6";
+	})
+	  (fetchurl {
+	      url = mirror://ubuntu/dists/artful/universe/binary-amd64/Packages.xz;
+	      sha256 = "10rwysnwpz225xxjkl58maflqgykqi1rlrm0h0w5bis86jwp59ph";
+	  })
+	];
+	urlPrefix = mirror://ubuntu;
+	packages = commonDebPackages ++ [ "diffutils" "libc-bin" ];
+    };
     debian8i386 = debian8i386 // {
       packagesList = fetchurl {
         url = "mirror://debian/dists/jessie/main/binary-i386/Packages.xz";
@@ -174,14 +206,18 @@ rec {
 
   debs = with diskImageFuns;
     listToAttrs (concatLists (for [
+      { name = "artful";
+        b64 = ubuntu1710x86_64;
+	b32 = ubuntu1710i386;
+	extra = [ "clang" "libssl1.0-dev" ]; }
       { name = "zesty";
         b64 = ubuntu1704x86_64;
 	b32 = ubuntu1704i386;
-	extra = [ "gcc-5" "g++-5" ]; }
+	extra = [ "clang" "libssl1.0-dev" ]; }
       { name = "yakkety";
         b64 = ubuntu1610x86_64;
 	b32 = ubuntu1610i386;
-	extra = [ "gcc-5" "g++-5" ]; }
+	extra = [ "g++5" ]; }
       { name = "xenial";
         b64 = ubuntu1604x86_64;
 	b32 = ubuntu1604i386; }

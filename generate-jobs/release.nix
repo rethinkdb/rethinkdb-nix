@@ -39,12 +39,12 @@ let
   mainSpecs = builtins.foldl' (a: b: a // b) {} (map (branch: {
     "${branch}" = jobset {
       inherit branch;
-      checkinterval = 600;
+      # checkinterval =  600;
     };
     "daily-${branch}" = jobset {
       inherit branch;
       job = "daily";
-      checkinterval = 86400; # 1 day
+      # checkinterval = 86400; # 1 day
       attrs = {
         description = "Daily build of ${branch}";
       	schedulingshares = schedulingLow;
@@ -56,7 +56,7 @@ let
   releaseSpecs = builtins.foldl' (a: b: a // b) {} (map (info: {
       "release-${info.name}" = jobset {
         branch = info.branch;
-	checkinterval = 600;
+	# checkinterval = 600;
 	job = "release";
 	attrs = {
           description = "Release ${info.name} ${info.type}";
@@ -72,7 +72,7 @@ let
     value = jobset {
       repo = pr.head.repo.full_name or "${pr.user.login}/rethinkdb";
       branch = pr.head.ref;
-      checkinterval = 600;
+      # checkinterval = 600;
       attrs = {
         description = "[${pr.milestone.title or "unassigned"}] ${pr.title}";
 

@@ -10,10 +10,10 @@ rec {
     "unit.TimerTest"
     
     # Heavy tests that may sometimes fail
-    # "unit.RDBProtocol"
-    # "unit.RDBBtree"
-    # "unit.RDBInterrupt"
-    # "unit.ClusteringRaft"
+    "unit.RDBProtocol" # .SindexFuzzCreateDrop
+    "unit.RDBBtree" # .SindexPostConstruct
+    "unit.RDBInterrupt"
+    "unit.ClusteringRaft"
   ];
   skipTests = tests:
       concatStringsSep " " (map (t: "'!" + t + "'") tests);

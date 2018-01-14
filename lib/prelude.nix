@@ -38,7 +38,8 @@ let lib = rec {
 
   mkStdBuilder = script: toFile "builder.sh" ("source $stdenv/setup\n" + script);
 
-  reCC = pkgs.ccacheWrapper.override {
+  reCC = pkgs.gcc5;
+  reCC_broken = pkgs.ccacheWrapper.override {
     extraConfig = ''
       export CCACHE_COMPRESS=1
       export CCACHE_DIR=/home/nix/ccache # chown root:build, chmod 770
