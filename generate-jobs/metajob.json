@@ -4,7 +4,7 @@
     "description": "Meta-job v8",
     "nixexprinput": "rethinkdb-nix",
     "nixexprpath": "generate-jobs/release.nix",
-    "checkinterval": 00,
+    "checkinterval": 0,
     "schedulingshares": 100,
     "enableemail": true,
     "emailoverride": "",
