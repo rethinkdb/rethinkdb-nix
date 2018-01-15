@@ -132,6 +132,7 @@ rec {
       # TODO: move upstream
       sed -i 's/reset-dist-dir: FORCE | web-assets/reset-dist-dir: FORCE/' mk/packaging.mk
       sed -i 's/install: build/install:/' packaging/debian/rules
+      patch -p1 < "${../patch/debdeps.patch}"
 
       echo "${env.version}" > VERSION.OVERRIDE
       cp -r --no-preserve=all $fetchDependencies/* .
