@@ -26,9 +26,9 @@ index 436e933227..24106bb711 100644
 -    DEB_BUILD_DEPENDS += , clang, libssl1.0-dev
 -    DSC_CONFIGURE_DEFAULT += CXX=clang++
 -  endif
-+# Pick a working C++ compiler
-+ifneq (,$(findstring $(UBUNTU_RELEASE)$(DEB_RELEASE), trusty xenial yakkety jessie))
-+  DEB_BUILD_DEPENDS += , g++5
++# RethinkDB fails to compile with GCC 6 (#5757)
++ifneq (,$(findstring $(UBUNTU_RELEASE)$(DEB_RELEASE), artful xenial trusty))
++  DEB_BUILD_DEPENDS += , g++-5
 +  DSC_CONFIGURE_DEFAULT += CXX=g++-5
 +else ifneq (,$(findstring $(UBUNTU_RELEASE)$(DEB_RELEASE), clang))
 +  DEB_BUILD_DEPENDS += , clang
@@ -37,7 +37,7 @@ index 436e933227..24106bb711 100644
 +endif
 +
 +# Pick the appropriate version of libssl
-+ifneq (,$(findstring $(UBUNTU_RELEASE)$(DEB_RELEASE), trusty xenial jessie yakkety))
++ifneq (,$(findstring $(UBUNTU_RELEASE)$(DEB_RELEASE), artful trusty xenial jessie))
 +  DEB_BUILD_DEPENDS += , libssl-dev
 +else
 +  DEB_BUILD_DEPENDS += , libssl1.0-dev
